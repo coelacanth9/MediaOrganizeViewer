@@ -24,6 +24,7 @@ namespace MediaOrganizeViewer.ViewModels
 
         // エラー回避および整理用：ディレクトリかどうかの判定フラグ
         public bool IsDirectory { get; set; } = true;
+        public bool IsRoot { get; set; } = false; // ルート判定用フラグ
 
         // 割り当てられたショートカット（F1〜F5など）を表示するためのプロパティ
         [ObservableProperty]

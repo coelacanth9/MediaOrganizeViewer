@@ -22,108 +22,51 @@ namespace MediaOrganizeViewer.Properties {
                 return defaultInstance;
             }
         }
-
+        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string DestinationRootPath
-        {
-            get
-            {
+        public string SourceRootPath {
+            get {
+                return ((string)(this["SourceRootPath"]));
+            }
+            set {
+                this["SourceRootPath"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string DestinationRootPath {
+            get {
                 return ((string)(this["DestinationRootPath"]));
             }
-            set
-            {
+            set {
                 this["DestinationRootPath"] = value;
             }
         }
-
+        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string ViewingRootPath
-        {
-            get
-            {
-                return ((string)(this["ViewingRootPath"]));
-            }
-            set
-            {
-                this["ViewingRootPath"] = value;
-            }
-        }
-
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string LastViewedFilePath
-        {
-            get
-            {
+        public string LastViewedFilePath {
+            get {
                 return ((string)(this["LastViewedFilePath"]));
             }
-            set
-            {
+            set {
                 this["LastViewedFilePath"] = value;
             }
         }
-
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("True")]
-        public bool SidebarVisible
-        {
-            get
-            {
-                return ((bool)(this["SidebarVisible"]));
-            }
-            set
-            {
-                this["SidebarVisible"] = value;
-            }
-        }
-
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0.4")]
-        public double SidebarSplitterPosition
-        {
-            get
-            {
-                return ((double)(this["SidebarSplitterPosition"]));
-            }
-            set
-            {
-                this["SidebarSplitterPosition"] = value;
-            }
-        }
-
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("True")]
-        public bool AutoRestoreLastFile
-        {
-            get
-            {
-                return ((bool)(this["AutoRestoreLastFile"]));
-            }
-            set
-            {
-                this["AutoRestoreLastFile"] = value;
-            }
-        }
-
+        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string FolderShortcuts
-        {
-            get
-            {
+        public string FolderShortcuts {
+            get {
                 return ((string)(this["FolderShortcuts"]));
             }
-            set
-            {
+            set {
                 this["FolderShortcuts"] = value;
             }
         }

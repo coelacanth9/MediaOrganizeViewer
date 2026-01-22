@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using MediaOrganizeViewer.Messages;
 
@@ -14,17 +15,13 @@ namespace MediaOrganizeViewer.ViewModels
     public partial class FolderTreeViewModel : ObservableObject
     {
         private readonly bool _isSource;
-
         // ツリーのルートアイテム
         public ObservableCollection<FolderTreeItem> Items { get; } = new();
 
         public FolderTreeViewModel(string rootPath, bool isSource)
         {
             _isSource = isSource;
-            if (!string.IsNullOrEmpty(rootPath))
-            {
-                SetRoot(rootPath);
-            }
+            SetRoot(rootPath);
         }
 
         /// <summary>
@@ -32,15 +29,54 @@ namespace MediaOrganizeViewer.ViewModels
         /// </summary>
         public void SetRoot(string path)
         {
+            // コレクションを空にする（ZipImageViewer の RootItems.Clear() 相当）
             Items.Clear();
-            if (!Directory.Exists(path)) return;
 
-            // ルートアイテムの作成
-            var root = CreateItem(path);
-            Items.Add(root);
+            if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
+            {
+                // パスが実在する場合の処理
+                var root = CreateItem(path);
+                root.Name = Path.GetFileName(path);
+                if (string.IsNullOrEmpty(root.Name)) root.Name = path;
 
-            // ルートは最初から展開しておく
-            root.IsExpanded = true;
+                root.IsRoot = true;
+                root.IsExpanded = true;
+                Items.Add(root);
+            }
+            else
+            {
+                // ★ここが ZipImageViewer の else 節の完全な再現です
+                // 実在しない場合、"クリックして設定" 用のダミーアイテムを生成して必ず Add する
+                var selectRootItem = new FolderTreeItem(string.Empty)
+                {
+                    Name = _isSource ? "ここをクリックして移動元を設定" : "ここをクリックして移動先を設定",
+                    IsRoot = true,
+                    IsExpanded = true
+                };
+
+                // これを Add しないと、TreeView は「空（冴えない状態）」になります
+                Items.Add(selectRootItem);
+            }
+        }
+
+        [RelayCommand]
+        public void ChangeRootDirectory()
+        {
+            var dialog = new Microsoft.Win32.OpenFolderDialog
+            {
+                InitialDirectory = Items.FirstOrDefault()?.Path,
+                Title = _isSource ? "Sourceルートを選択" : "Destinationルートを選択"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                // パスが今のルートと違う場合だけ更新する
+                if (Items.FirstOrDefault()?.Path != dialog.FolderName)
+                {
+                    SetRoot(dialog.FolderName);
+                    WeakReferenceMessenger.Default.Send(new RootPathChangedMessage(dialog.FolderName, _isSource));
+                }
+            }
         }
 
         /// <summary>
@@ -64,7 +100,7 @@ namespace MediaOrganizeViewer.ViewModels
                 {
                     if (item.Path != null)
                     {
-                        WeakReferenceMessenger.Default.Send(new FolderSelectedMessage(item.Path, _isSource));
+                        WeakReferenceMessenger.Default.Send(new FolderSelectedMessage   (item.Path, _isSource));
                     }
                 }
             };

@@ -13,6 +13,8 @@ namespace MediaOrganizeViewer.ViewModels
 {
     public partial class MainViewModel : ObservableObject, IRecipient<FolderSelectedMessage>
     {
+        private readonly ISettingsService _settingsService;
+
         [ObservableProperty]
         private FolderTreeViewModel _sourceFolderTree;
 
@@ -25,19 +27,19 @@ namespace MediaOrganizeViewer.ViewModels
         // XAMLにバインドする画像プロパティ
         public System.Windows.Media.Imaging.BitmapSource? LeftImage => (CurrentMedia as IImageMedia)?.LeftImage;
         public System.Windows.Media.Imaging.BitmapSource? RightImage => (CurrentMedia as IImageMedia)?.RightImage;
-        public MainViewModel()
+        public MainViewModel(ISettingsService settingsService)
         {
-            // 実際には SettingsService からパスを取得しますが、まずは動作確認用に直接指定
-            SourceFolderTree = new FolderTreeViewModel(@"E:\18\comics\byDate", true);
-            DestinationFolderTree = new FolderTreeViewModel(@"E:\18\comics\testAuther", false);
-
+            _settingsService = settingsService;
+            _settingsService.Load();
+            SourceFolderTree = new FolderTreeViewModel(_settingsService.SourceRootPath, true);
+            DestinationFolderTree = new FolderTreeViewModel(_settingsService.DestinationRootPath, false);
             WeakReferenceMessenger.Default.RegisterAll(this);
 
         }
 
         public async void Receive(FolderSelectedMessage message)
         {
-            if (message.IsSource)
+            if (message.IsSource)   
             {
                 // フォルダ内の最初のzipを探す
                 var firstZip = System.IO.Directory.EnumerateFiles(message.Value, "*.zip").FirstOrDefault();
@@ -46,6 +48,21 @@ namespace MediaOrganizeViewer.ViewModels
                     await LoadMediaAsync(firstZip);
                 }
             }
+        }
+
+        public void Receive(RootPathChangedMessage message)
+        {
+            if (message.IsSource)
+            {
+                _settingsService.SourceRootPath = message.Value;
+            }
+            else
+            {
+                _settingsService.DestinationRootPath = message.Value;
+            }
+
+            // 物理ファイル(Settings.settings)に書き込み
+            _settingsService.Save();
         }
 
         private async Task LoadMediaAsync(string path)

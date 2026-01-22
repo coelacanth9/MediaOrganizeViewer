@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 using MediaOrganizeViewer.ViewModels;
@@ -11,8 +12,9 @@ namespace MediaOrganizeViewer
         public MainWindow()
         {
             InitializeComponent();
+            var settingsService = new AppConfigSettingsService();
             // DataContext をセットすることで XAML と ViewModel が繋がる
-            this.DataContext = new MainViewModel();
+            this.DataContext = new MainViewModel(settingsService);
         }
 
         protected override async void OnPreviewKeyDown(KeyEventArgs e)
@@ -47,6 +49,31 @@ namespace MediaOrganizeViewer
 
         private void FolderTreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
+            var selectedItem = e.NewValue as FolderTreeItem;
+            if (selectedItem == null) return;
+
+            var mainVm = this.DataContext as MainViewModel;
+            if (mainVm == null) return;
+
+            var treeView = sender as TreeView;
+            if (treeView == null) return;
+
+            FolderTreeViewModel? targetTreeVm = null;
+
+            if (mainVm.DestinationFolderTree.Items.Contains(selectedItem))
+            {
+                targetTreeVm = mainVm.DestinationFolderTree;
+            }
+            else if (mainVm.SourceFolderTree.Items.Contains(selectedItem))
+            {
+                targetTreeVm = mainVm.SourceFolderTree;
+            }
+
+            if (targetTreeVm != null)
+            {
+                targetTreeVm.ChangeRootDirectory();
+            }
+
             this.Focus();
         }
 
