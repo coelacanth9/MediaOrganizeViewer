@@ -4,8 +4,6 @@ using System.IO;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
-using MediaOrganizeViewer.Messages;
 
 namespace MediaOrganizeViewer.ViewModels
 {
@@ -18,9 +16,18 @@ namespace MediaOrganizeViewer.ViewModels
         // ツリーのルートアイテム
         public ObservableCollection<FolderTreeItem> Items { get; } = new();
 
+        // 選択されたフォルダのパス
+        [ObservableProperty]
+        private string? _selectedPath;
+
+        // ルートパス（設定保存用）
+        [ObservableProperty]
+        private string? _rootPath;
+
         public FolderTreeViewModel(string rootPath, bool isSource)
         {
             _isSource = isSource;
+            _rootPath = rootPath;
             SetRoot(rootPath);
         }
 
@@ -74,7 +81,7 @@ namespace MediaOrganizeViewer.ViewModels
                 if (Items.FirstOrDefault()?.Path != dialog.FolderName)
                 {
                     SetRoot(dialog.FolderName);
-                    WeakReferenceMessenger.Default.Send(new RootPathChangedMessage(dialog.FolderName, _isSource));
+                    RootPath = dialog.FolderName;
                 }
             }
         }
@@ -95,13 +102,10 @@ namespace MediaOrganizeViewer.ViewModels
                     LoadChildren(item);
                 }
 
-                // [2] 選択された時：Messengerでアプリ全体に通知
+                // [2] 選択された時：SelectedPathプロパティを更新
                 if (e.PropertyName == nameof(FolderTreeItem.IsSelected) && item.IsSelected)
                 {
-                    if (item.Path != null)
-                    {
-                        WeakReferenceMessenger.Default.Send(new FolderSelectedMessage   (item.Path, _isSource));
-                    }
+                    SelectedPath = item.Path;
                 }
             };
 
@@ -142,6 +146,14 @@ namespace MediaOrganizeViewer.ViewModels
             {
                 System.Diagnostics.Debug.WriteLine($"フォルダ読み込みエラー: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// ショートカットキーに割り当てられたフォルダパスを取得
+        /// </summary>
+        public string? GetFolderByShortcut(string shortcutKey, ISettingsService settingsService)
+        {
+            return settingsService.GetShortcutFolder(shortcutKey);
         }
     }
 }

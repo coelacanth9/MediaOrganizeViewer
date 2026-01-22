@@ -24,18 +24,27 @@ namespace MediaOrganizeViewer
             var vm = DataContext as MainViewModel;
             if (vm == null) return;
 
+            // F1-F5によるショートカットジャンプ
+            if (e.Key >= Key.F1 && e.Key <= Key.F5)
+            {
+                e.Handled = true;
+                HandleShortcutKey(e.Key.ToString());
+                this.Focus();
+                return;
+            }
+
             switch (e.Key)
             {   // フォルダ内移動
-                case Key.PageUp:   
-                case Key.PageDown:  
+                case Key.PageUp:
+                case Key.PageDown:
                     e.Handled = true;
                     await vm.MoveNextMediaAsync(e.Key == Key.PageDown);
                     this.Focus();
                     return;
 
                 // 書庫内移動
-                case Key.Left:      
-                case Key.Right: 
+                case Key.Left:
+                case Key.Right:
                     if (vm.CurrentMedia is IPageNavigable navigable)
                     {
                         e.Handled = true;
@@ -47,6 +56,41 @@ namespace MediaOrganizeViewer
             }
         }
 
+        private async void HandleShortcutKey(string shortcutKey)
+        {
+            var vm = DataContext as MainViewModel;
+            if (vm == null) return;
+
+            // ファイルを移動して次のファイルパスを取得
+            var nextFilePath = vm.QuickMoveToFolder(shortcutKey, (status) =>
+            {
+                StatusBarText.Text = status;
+            });
+
+            // 次のファイルがある場合はロード
+            if (!string.IsNullOrEmpty(nextFilePath))
+            {
+                await vm.LoadMediaAsync(nextFilePath);
+            }
+            else
+            {
+                // ファイルがなくなった場合はクリア
+                vm.CurrentMedia?.Dispose();
+                vm.CurrentMedia = null;
+            }
+        }
+
+        private FolderTreeItem? FindItemByPath(System.Collections.ObjectModel.ObservableCollection<FolderTreeItem> items, string path)
+        {
+            foreach (var item in items)
+            {
+                if (item.Path == path) return item;
+                var found = FindItemByPath(item.Children, path);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
         private void FolderTreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             var selectedItem = e.NewValue as FolderTreeItem;
@@ -55,23 +99,24 @@ namespace MediaOrganizeViewer
             var mainVm = this.DataContext as MainViewModel;
             if (mainVm == null) return;
 
-            var treeView = sender as TreeView;
-            if (treeView == null) return;
-
-            FolderTreeViewModel? targetTreeVm = null;
-
-            if (mainVm.DestinationFolderTree.Items.Contains(selectedItem))
+            // ルートアイテムがクリックされた場合のみ、ルート変更ダイアログを表示
+            if (selectedItem.IsRoot)
             {
-                targetTreeVm = mainVm.DestinationFolderTree;
-            }
-            else if (mainVm.SourceFolderTree.Items.Contains(selectedItem))
-            {
-                targetTreeVm = mainVm.SourceFolderTree;
-            }
+                FolderTreeViewModel? targetTreeVm = null;
 
-            if (targetTreeVm != null)
-            {
-                targetTreeVm.ChangeRootDirectory();
+                if (mainVm.DestinationFolderTree.Items.Contains(selectedItem))
+                {
+                    targetTreeVm = mainVm.DestinationFolderTree;
+                }
+                else if (mainVm.SourceFolderTree.Items.Contains(selectedItem))
+                {
+                    targetTreeVm = mainVm.SourceFolderTree;
+                }
+
+                if (targetTreeVm != null)
+                {
+                    targetTreeVm.ChangeRootDirectory();
+                }
             }
 
             this.Focus();
@@ -84,6 +129,86 @@ namespace MediaOrganizeViewer
                 this.Focus();
                 Keyboard.Focus(this);
             }), DispatcherPriority.Input);
+        }
+
+        private void AssignShortcut_Click(object sender, RoutedEventArgs e)
+        {
+            var menuItem = sender as MenuItem;
+            if (menuItem == null) return;
+
+            var shortcutKey = menuItem.Tag as string;
+            if (string.IsNullOrEmpty(shortcutKey)) return;
+
+            var vm = DataContext as MainViewModel;
+            if (vm == null) return;
+
+            // コンテキストメニューが開かれたTreeViewを特定
+            var contextMenu = menuItem.Parent as ContextMenu;
+            var treeView = contextMenu?.PlacementTarget as TreeView;
+            if (treeView == null) return;
+
+            // 選択されているフォルダアイテムを取得
+            FolderTreeItem? selectedItem = null;
+            if (treeView == DestinationFolderTreeView)
+            {
+                selectedItem = FindSelectedItem(vm.DestinationFolderTree.Items);
+            }
+
+            if (selectedItem == null || string.IsNullOrEmpty(selectedItem.Path)) return;
+
+            // ショートカット割り当て
+            vm.SettingsService.AssignFolderShortcut(selectedItem.Path, shortcutKey);
+            vm.SettingsService.Save();
+
+            // 表示名を更新
+            selectedItem.AssignedShortcut = shortcutKey;
+
+            // ステータスバーに通知
+            StatusBarText.Text = $"フォルダ '{selectedItem.Name}' に {shortcutKey} を割り当てました";
+        }
+
+        private void RemoveShortcut_Click(object sender, RoutedEventArgs e)
+        {
+            var menuItem = sender as MenuItem;
+            if (menuItem == null) return;
+
+            var vm = DataContext as MainViewModel;
+            if (vm == null) return;
+
+            // コンテキストメニューが開かれたTreeViewを特定
+            var contextMenu = menuItem.Parent as ContextMenu;
+            var treeView = contextMenu?.PlacementTarget as TreeView;
+            if (treeView == null) return;
+
+            // 選択されているフォルダアイテムを取得
+            FolderTreeItem? selectedItem = null;
+            if (treeView == DestinationFolderTreeView)
+            {
+                selectedItem = FindSelectedItem(vm.DestinationFolderTree.Items);
+            }
+
+            if (selectedItem == null || string.IsNullOrEmpty(selectedItem.Path)) return;
+
+            // ショートカット解除
+            vm.SettingsService.RemoveFolderShortcut(selectedItem.Path);
+            vm.SettingsService.Save();
+
+            // 表示名を更新
+            selectedItem.AssignedShortcut = string.Empty;
+
+            // ステータスバーに通知
+            StatusBarText.Text = $"フォルダ '{selectedItem.Name}' のショートカットを解除しました";
+        }
+
+        private FolderTreeItem? FindSelectedItem(System.Collections.ObjectModel.ObservableCollection<FolderTreeItem> items)
+        {
+            foreach (var item in items)
+            {
+                if (item.IsSelected) return item;
+                var found = FindSelectedItem(item.Children);
+                if (found != null) return found;
+            }
+            return null;
         }
     }
 }

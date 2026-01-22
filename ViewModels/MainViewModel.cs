@@ -1,6 +1,4 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Messaging;
-using MediaOrganizeViewer.Messages;
 using MediaViewer.Core;
 using System;
 using System.Collections.Generic;
@@ -11,9 +9,12 @@ using System.Threading.Tasks;
 
 namespace MediaOrganizeViewer.ViewModels
 {
-    public partial class MainViewModel : ObservableObject, IRecipient<FolderSelectedMessage>
+    public partial class MainViewModel : ObservableObject
     {
         private readonly ISettingsService _settingsService;
+
+        // SettingsServiceを外部から参照できるように公開
+        public ISettingsService SettingsService => _settingsService;
 
         [ObservableProperty]
         private FolderTreeViewModel _sourceFolderTree;
@@ -33,39 +34,43 @@ namespace MediaOrganizeViewer.ViewModels
             _settingsService.Load();
             SourceFolderTree = new FolderTreeViewModel(_settingsService.SourceRootPath, true);
             DestinationFolderTree = new FolderTreeViewModel(_settingsService.DestinationRootPath, false);
-            WeakReferenceMessenger.Default.RegisterAll(this);
 
-        }
-
-        public async void Receive(FolderSelectedMessage message)
-        {
-            if (message.IsSource)   
+            // FolderTreeViewModelのSelectedPath変更を直接監視
+            SourceFolderTree.PropertyChanged += async (s, e) =>
             {
-                // フォルダ内の最初のzipを探す
-                var firstZip = System.IO.Directory.EnumerateFiles(message.Value, "*.zip").FirstOrDefault();
-                if (firstZip != null)
+                if (e.PropertyName == nameof(FolderTreeViewModel.SelectedPath) && SourceFolderTree.SelectedPath != null)
                 {
-                    await LoadMediaAsync(firstZip);
+                    await OnSourceFolderSelectedAsync(SourceFolderTree.SelectedPath);
                 }
-            }
+                else if (e.PropertyName == nameof(FolderTreeViewModel.RootPath))
+                {
+                    _settingsService.SourceRootPath = SourceFolderTree.RootPath ?? string.Empty;
+                    _settingsService.Save();
+                }
+            };
+
+            DestinationFolderTree.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(FolderTreeViewModel.RootPath))
+                {
+                    _settingsService.DestinationRootPath = DestinationFolderTree.RootPath ?? string.Empty;
+                    _settingsService.Save();
+                }
+            };
         }
 
-        public void Receive(RootPathChangedMessage message)
+        private async Task OnSourceFolderSelectedAsync(string folderPath)
         {
-            if (message.IsSource)
+            // フォルダ内の最初のzipを探す
+            var firstZip = System.IO.Directory.EnumerateFiles(folderPath, "*.zip").FirstOrDefault();
+            if (firstZip != null)
             {
-                _settingsService.SourceRootPath = message.Value;
+                await LoadMediaAsync(firstZip);
             }
-            else
-            {
-                _settingsService.DestinationRootPath = message.Value;
-            }
-
-            // 物理ファイル(Settings.settings)に書き込み
-            _settingsService.Save();
         }
 
-        private async Task LoadMediaAsync(string path)
+
+        public async Task LoadMediaAsync(string path)
         {
             if (CurrentMedia != null)
             {
@@ -120,6 +125,90 @@ namespace MediaOrganizeViewer.ViewModels
             {
                 OnPropertyChanged(nameof(LeftImage));
                 OnPropertyChanged(nameof(RightImage));
+            }
+        }
+
+        /// <summary>
+        /// ショートカットキーを使ってファイルを移動
+        /// </summary>
+        public string? QuickMoveToFolder(string? shortcutKey, Action<string> updateStatus)
+        {
+            if (CurrentMedia == null || string.IsNullOrEmpty(shortcutKey))
+            {
+                updateStatus("移動するファイルがありません");
+                return null;
+            }
+
+            // ショートカットからフォルダパス取得
+            var destinationFolder = DestinationFolderTree.GetFolderByShortcut(shortcutKey, _settingsService);
+
+            if (string.IsNullOrEmpty(destinationFolder))
+            {
+                updateStatus($"ショートカットキー '{shortcutKey}' に対応するフォルダが見つかりません");
+                return null;
+            }
+
+            // フォルダが存在しない場合はエラー
+            if (!System.IO.Directory.Exists(destinationFolder))
+            {
+                updateStatus($"移動先フォルダが存在しません: {destinationFolder}");
+                return null;
+            }
+
+            try
+            {
+                var currentFilePath = CurrentMedia.Path;
+                var fileName = System.IO.Path.GetFileName(currentFilePath);
+                var destinationPath = System.IO.Path.Combine(destinationFolder, fileName);
+
+                if (System.IO.File.Exists(destinationPath))
+                {
+                    updateStatus("移動先に同名ファイルが存在します");
+                    return null;
+                }
+
+                var sourceFolder = System.IO.Path.GetDirectoryName(currentFilePath);
+                var sourceFiles = System.IO.Directory.EnumerateFiles(sourceFolder!, "*.zip")
+                    .OrderBy(f => f)
+                    .ToList();
+                var currentIndex = sourceFiles.IndexOf(currentFilePath);
+
+                // 重要: ファイル移動前にCurrentMediaを解放してファイルロックを解除
+                CurrentMedia.PropertyChanged -= OnMediaPropertyChanged;
+                CurrentMedia.Dispose();
+                CurrentMedia = null;
+
+                // ファイル移動実行
+                System.IO.File.Move(currentFilePath, destinationPath);
+
+                // フォルダ名を取得して表示
+                var folderName = System.IO.Path.GetFileName(destinationFolder);
+                updateStatus($"ファイルを{folderName}に移動しました: {destinationPath}");
+
+                // 前回閲覧ファイルパスをクリア
+                _settingsService.LastViewedFilePath = string.Empty;
+                _settingsService.Save();
+
+                // 次のファイルのパスを返す
+                if (currentIndex >= 0 && currentIndex < sourceFiles.Count)
+                {
+                    // 移動したファイルの次のファイルを返す
+                    if (currentIndex < sourceFiles.Count - 1)
+                    {
+                        return sourceFiles[currentIndex + 1];
+                    }
+                    else if (currentIndex > 0)
+                    {
+                        return sourceFiles[currentIndex - 1];
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                updateStatus($"ファイル移動エラー: {ex.Message}");
+                return null;
             }
         }
     }

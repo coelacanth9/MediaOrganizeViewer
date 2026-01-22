@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//e/programing/VC#/ZipedImageViewer/ViewModels/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

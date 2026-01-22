@@ -11,11 +11,17 @@
     </Window.Resources>
     
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="300"/>
-            <ColumnDefinition Width="5"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
         <Grid Grid.Column="0" Background="#F3F3F3">
             <Grid.RowDefinitions>
@@ -25,7 +31,8 @@
             </Grid.RowDefinitions>
 
             <GroupBox Header="Destination (移動先)" Grid.Row="0" Margin="5">
-                <TreeView ItemsSource="{Binding DestinationFolderTree.Items}"
+                <TreeView x:Name="DestinationFolderTreeView"
+                          ItemsSource="{Binding DestinationFolderTree.Items}"
                           SelectedItemChanged="FolderTreeView_SelectedItemChanged">
                     <TreeView.ItemContainerStyle>
                         <Style TargetType="TreeViewItem">
@@ -38,6 +45,17 @@
                             <TextBlock Text="{Binding DisplayName}"/>
                         </HierarchicalDataTemplate>
                     </TreeView.ItemTemplate>
+                    <TreeView.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="F1に割り当て" Click="AssignShortcut_Click" Tag="F1"/>
+                            <MenuItem Header="F2に割り当て" Click="AssignShortcut_Click" Tag="F2"/>
+                            <MenuItem Header="F3に割り当て" Click="AssignShortcut_Click" Tag="F3"/>
+                            <MenuItem Header="F4に割り当て" Click="AssignShortcut_Click" Tag="F4"/>
+                            <MenuItem Header="F5に割り当て" Click="AssignShortcut_Click" Tag="F5"/>
+                            <Separator/>
+                            <MenuItem Header="ショートカット解除" Click="RemoveShortcut_Click"/>
+                        </ContextMenu>
+                    </TreeView.ContextMenu>
                 </TreeView>
             </GroupBox>
 
@@ -72,5 +90,13 @@
                          FallbackValue=Collapsed, TargetNullValue=Collapsed}"/>
             </Grid>
         </Border>
+        </Grid>
+
+        <!-- ステータスバー -->
+        <StatusBar Grid.Row="1" Background="#F0F0F0">
+            <StatusBarItem>
+                <TextBlock x:Name="StatusBarText" Text="準備完了" />
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Window>

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using MediaOrganizeViewer.Properties;
 
 namespace MediaOrganizeViewer
@@ -61,7 +62,24 @@ namespace MediaOrganizeViewer
             DestinationRootPath = Settings.Default.DestinationRootPath;
             LastViewedFilePath = Settings.Default.LastViewedFilePath;
 
-            // TODO: Settings.Default.FolderShortcuts (JSON) から _shortcutFolders への復元ロジック
+            // Settings.Default.FolderShortcuts (JSON) から _shortcutFolders への復元
+            var json = Settings.Default.FolderShortcuts;
+            if (!string.IsNullOrEmpty(json))
+            {
+                try
+                {
+                    var loaded = JsonSerializer.Deserialize<List<FolderDestination>>(json);
+                    if (loaded != null)
+                    {
+                        _shortcutFolders = loaded;
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"ショートカット設定の読み込みエラー: {ex.Message}");
+                    _shortcutFolders = new List<FolderDestination>();
+                }
+            }
         }
 
         public void Save()
@@ -70,7 +88,16 @@ namespace MediaOrganizeViewer
             Settings.Default.DestinationRootPath = DestinationRootPath;
             Settings.Default.LastViewedFilePath = LastViewedFilePath;
 
-            // TODO: _shortcutFolders から Settings.Default.FolderShortcuts (JSON) への保存ロジック
+            // _shortcutFolders から Settings.Default.FolderShortcuts (JSON) への保存
+            try
+            {
+                var json = JsonSerializer.Serialize(_shortcutFolders);
+                Settings.Default.FolderShortcuts = json;
+            }
+            catch (JsonException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ショートカット設定の保存エラー: {ex.Message}");
+            }
 
             Settings.Default.Save();
         }
