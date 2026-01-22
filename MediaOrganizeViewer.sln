@@ -5,7 +5,7 @@ VisualStudioVersion = 17.10.35027.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediaOrganizeViewer", "MediaOrganizeViewer.csproj", "{49B627D0-2435-4142-AEA7-73283775B9B3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediaViewer.Core", "..\MediaViewer.Core\MediaViewer.Core.csproj", "{6F12ECE5-3364-4AF5-A022-9C91ACE6307D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediaViewer.Core", "MediaViewer.Core\MediaViewer.Core.csproj", "{7350DEA1-DA56-4FB6-B60E-E2634DFC914E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{49B627D0-2435-4142-AEA7-73283775B9B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{49B627D0-2435-4142-AEA7-73283775B9B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{49B627D0-2435-4142-AEA7-73283775B9B3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6F12ECE5-3364-4AF5-A022-9C91ACE6307D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6F12ECE5-3364-4AF5-A022-9C91ACE6307D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6F12ECE5-3364-4AF5-A022-9C91ACE6307D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6F12ECE5-3364-4AF5-A022-9C91ACE6307D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7350DEA1-DA56-4FB6-B60E-E2634DFC914E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7350DEA1-DA56-4FB6-B60E-E2634DFC914E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7350DEA1-DA56-4FB6-B60E-E2634DFC914E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7350DEA1-DA56-4FB6-B60E-E2634DFC914E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

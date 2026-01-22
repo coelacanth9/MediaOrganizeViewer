@@ -9,6 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="MediaViewer.Core\**" />
+    <EmbeddedResource Remove="MediaViewer.Core\**" />
+    <None Remove="MediaViewer.Core\**" />
+    <Page Remove="MediaViewer.Core\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
@@ -28,7 +35,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MediaViewer.Core\MediaViewer.Core.csproj" />
+    <ProjectReference Include="MediaViewer.Core\MediaViewer.Core.csproj" />
   </ItemGroup>
 
 </Project>
