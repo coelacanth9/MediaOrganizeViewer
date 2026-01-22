@@ -1,0 +1,3 @@
+[submodule "MediaViewer.Core"]
+	path = MediaViewer.Core
+	url = https://github.com/coelacanth9/MediaViewer.Core.git
