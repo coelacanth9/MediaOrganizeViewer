@@ -3,8 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:core="clr-namespace:MediaViewer.Core.View;assembly=MediaViewer.Core"
         mc:Ignorable="d"
-        Title="Media Organize Viewer" Height="700" Width="1000">
+        Title="Media Organize Viewer" Height="700" Width="1000"
+        AllowDrop="True"
+        Drop="Window_Drop"
+        DragOver="Window_DragOver">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
@@ -47,6 +51,8 @@
                     </TreeView.ItemTemplate>
                     <TreeView.ContextMenu>
                         <ContextMenu>
+                            <MenuItem Header="新規フォルダ作成" Click="CreateFolder_Click"/>
+                            <Separator/>
                             <MenuItem Header="F1に割り当て" Click="AssignShortcut_Click" Tag="F1"/>
                             <MenuItem Header="F2に割り当て" Click="AssignShortcut_Click" Tag="F2"/>
                             <MenuItem Header="F3に割り当て" Click="AssignShortcut_Click" Tag="F3"/>
@@ -83,9 +89,9 @@
 
         <Border Grid.Column="2" Background="Black">
             <Grid>
-                <Image Source="{Binding LeftImage}" Stretch="Uniform" />
+                <core:MediaViewHost CurrentMedia="{Binding CurrentMedia}" />
                 <ProgressBar VerticalAlignment="Bottom" Height="4" IsIndeterminate="True"
-             Visibility="{Binding CurrentMedia.IsLoading, 
+             Visibility="{Binding CurrentMedia.IsLoading,
                          Converter={StaticResource BooleanToVisibilityConverter},
                          FallbackValue=Collapsed, TargetNullValue=Collapsed}"/>
             </Grid>

@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Read(//e/programing/VC#/ZipedImageViewer/ViewModels/**)"
+      "Read(//e/programing/VC#/ZipedImageViewer/ViewModels/**)",
+      "Read(//e/programing/VC#/ZipedImageViewer/**)"
     ],
     "deny": [],
     "ask": []

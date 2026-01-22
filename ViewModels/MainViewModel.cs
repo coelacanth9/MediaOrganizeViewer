@@ -25,15 +25,12 @@ namespace MediaOrganizeViewer.ViewModels
         [ObservableProperty]
         private MediaContent? _currentMedia;
 
-        // XAMLにバインドする画像プロパティ
-        public System.Windows.Media.Imaging.BitmapSource? LeftImage => (CurrentMedia as IImageMedia)?.LeftImage;
-        public System.Windows.Media.Imaging.BitmapSource? RightImage => (CurrentMedia as IImageMedia)?.RightImage;
         public MainViewModel(ISettingsService settingsService)
         {
             _settingsService = settingsService;
             _settingsService.Load();
-            SourceFolderTree = new FolderTreeViewModel(_settingsService.SourceRootPath, true);
-            DestinationFolderTree = new FolderTreeViewModel(_settingsService.DestinationRootPath, false);
+            SourceFolderTree = new FolderTreeViewModel(_settingsService.SourceRootPath, true, _settingsService);
+            DestinationFolderTree = new FolderTreeViewModel(_settingsService.DestinationRootPath, false, _settingsService);
 
             // FolderTreeViewModelのSelectedPath変更を直接監視
             SourceFolderTree.PropertyChanged += async (s, e) =>
@@ -57,6 +54,25 @@ namespace MediaOrganizeViewer.ViewModels
                     _settingsService.Save();
                 }
             };
+
+            // 最終閲覧位置を復元
+            RestoreLastViewedFile();
+        }
+
+        private async void RestoreLastViewedFile()
+        {
+            var lastPath = _settingsService.LastViewedFilePath;
+            if (!string.IsNullOrEmpty(lastPath) && System.IO.File.Exists(lastPath))
+            {
+                try
+                {
+                    await LoadMediaAsync(lastPath);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"最終閲覧位置の復元エラー: {ex.Message}");
+                }
+            }
         }
 
         private async Task OnSourceFolderSelectedAsync(string folderPath)
@@ -74,18 +90,24 @@ namespace MediaOrganizeViewer.ViewModels
         {
             if (CurrentMedia != null)
             {
-                CurrentMedia.PropertyChanged -= OnMediaPropertyChanged; // 以前の購読を解除
                 CurrentMedia.Dispose();
             }
 
             CurrentMedia = MediaFactory.Create(path);
-            CurrentMedia.PropertyChanged += OnMediaPropertyChanged; // ページ更新を検知するため購読
-
             await CurrentMedia.LoadAsync();
 
-            // 初回表示のために通知
-            OnPropertyChanged(nameof(LeftImage));
-            OnPropertyChanged(nameof(RightImage));
+            // 最終閲覧位置を保存
+            _settingsService.LastViewedFilePath = path;
+            _settingsService.Save();
+        }
+
+        public bool IsSupportedFile(string path)
+        {
+            var ext = System.IO.Path.GetExtension(path).ToLower();
+            return ext == ".zip" ||
+                   ext == ".jpg" || ext == ".jpeg" ||
+                   ext == ".png" || ext == ".bmp" ||
+                   ext == ".gif" || ext == ".webp";
         }
 
         public async Task MoveNextMediaAsync(bool forward)
@@ -97,8 +119,9 @@ namespace MediaOrganizeViewer.ViewModels
                 var directory = System.IO.Path.GetDirectoryName(CurrentMedia.Path);
                 if (string.IsNullOrEmpty(directory)) return;
 
-                // 以前のように、今のフォルダから対象ファイルをリストアップ
-                var files = System.IO.Directory.EnumerateFiles(directory, "*.zip")
+                // 対応するすべてのファイル形式を列挙
+                var files = System.IO.Directory.EnumerateFiles(directory)
+                                .Where(f => IsSupportedFile(f))
                                 .OrderBy(f => f)
                                 .ToList();
 
@@ -114,17 +137,7 @@ namespace MediaOrganizeViewer.ViewModels
             catch (Exception ex)
             {
                 // 以前のコードのようにデバッグ出力やステータス更新を行う
-                System.Diagnostics.Debug.WriteLine($"書庫移動エラー: {ex.Message}");
-            }
-        }
-
-        private void OnMediaPropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(IImageMedia.LeftImage) ||
-                e.PropertyName == nameof(IImageMedia.RightImage))
-            {
-                OnPropertyChanged(nameof(LeftImage));
-                OnPropertyChanged(nameof(RightImage));
+                System.Diagnostics.Debug.WriteLine($"メディア移動エラー: {ex.Message}");
             }
         }
 
@@ -174,7 +187,6 @@ namespace MediaOrganizeViewer.ViewModels
                 var currentIndex = sourceFiles.IndexOf(currentFilePath);
 
                 // 重要: ファイル移動前にCurrentMediaを解放してファイルロックを解除
-                CurrentMedia.PropertyChanged -= OnMediaPropertyChanged;
                 CurrentMedia.Dispose();
                 CurrentMedia = null;
 

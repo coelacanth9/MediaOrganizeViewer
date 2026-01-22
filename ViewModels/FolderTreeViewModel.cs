@@ -13,6 +13,8 @@ namespace MediaOrganizeViewer.ViewModels
     public partial class FolderTreeViewModel : ObservableObject
     {
         private readonly bool _isSource;
+        private readonly ISettingsService? _settingsService;
+
         // ツリーのルートアイテム
         public ObservableCollection<FolderTreeItem> Items { get; } = new();
 
@@ -24,9 +26,10 @@ namespace MediaOrganizeViewer.ViewModels
         [ObservableProperty]
         private string? _rootPath;
 
-        public FolderTreeViewModel(string rootPath, bool isSource)
+        public FolderTreeViewModel(string rootPath, bool isSource, ISettingsService? settingsService = null)
         {
             _isSource = isSource;
+            _settingsService = settingsService;
             _rootPath = rootPath;
             SetRoot(rootPath);
         }
@@ -93,6 +96,16 @@ namespace MediaOrganizeViewer.ViewModels
         {
             var item = new FolderTreeItem(path);
 
+            // 保存されているショートカットを復元
+            if (_settingsService != null && !string.IsNullOrEmpty(path))
+            {
+                var shortcut = _settingsService.GetFolderShortcut(path);
+                if (!string.IsNullOrEmpty(shortcut))
+                {
+                    item.AssignedShortcut = shortcut;
+                }
+            }
+
             // プロパティ変更通知を購読（展開時と選択時のアクション）
             item.PropertyChanged += (s, e) =>
             {
@@ -154,6 +167,35 @@ namespace MediaOrganizeViewer.ViewModels
         public string? GetFolderByShortcut(string shortcutKey, ISettingsService settingsService)
         {
             return settingsService.GetShortcutFolder(shortcutKey);
+        }
+
+        /// <summary>
+        /// 指定されたパスの親アイテムを再読み込み（新規フォルダ作成後などに使用）
+        /// </summary>
+        public void RefreshFolder(string parentPath)
+        {
+            var parentItem = FindItemByPath(Items, parentPath);
+            if (parentItem != null)
+            {
+                // 子アイテムをクリアして再読み込みフラグを立てる
+                parentItem.Children.Clear();
+                parentItem.Children.Add(new FolderTreeItem(null) { Name = "Loading..." });
+
+                // 再度展開させることで LoadChildren が呼ばれる
+                parentItem.IsExpanded = false;
+                parentItem.IsExpanded = true;
+            }
+        }
+
+        private FolderTreeItem? FindItemByPath(System.Collections.ObjectModel.ObservableCollection<FolderTreeItem> items, string path)
+        {
+            foreach (var item in items)
+            {
+                if (item.Path == path) return item;
+                var found = FindItemByPath(item.Children, path);
+                if (found != null) return found;
+            }
+            return null;
         }
     }
 }

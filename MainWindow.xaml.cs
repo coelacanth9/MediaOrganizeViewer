@@ -42,13 +42,13 @@ namespace MediaOrganizeViewer
                     this.Focus();
                     return;
 
-                // 書庫内移動
+                // 書庫内移動（左キー=次ページ、右キー=前ページ）
                 case Key.Left:
                 case Key.Right:
                     if (vm.CurrentMedia is IPageNavigable navigable)
                     {
                         e.Handled = true;
-                        if (e.Key == Key.Right) navigable.NextPage();
+                        if (e.Key == Key.Left) navigable.NextPage();
                         else navigable.PrevPage();
                         this.Focus();
                     }
@@ -131,6 +131,54 @@ namespace MediaOrganizeViewer
             }), DispatcherPriority.Input);
         }
 
+        private void CreateFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as MainViewModel;
+            if (vm == null) return;
+
+            // 選択されているフォルダアイテムを取得
+            var selectedItem = FindSelectedItem(vm.DestinationFolderTree.Items);
+            if (selectedItem == null || string.IsNullOrEmpty(selectedItem.Path))
+            {
+                StatusBarText.Text = "フォルダを選択してください";
+                return;
+            }
+
+            // ダイアログで新規フォルダ名を入力
+            var dialog = new TextInputDialog("新規フォルダ作成", "フォルダ名を入力してください:", "新しいフォルダ");
+            if (dialog.ShowDialog() == true)
+            {
+                var folderName = dialog.InputText.Trim();
+                if (string.IsNullOrEmpty(folderName))
+                {
+                    StatusBarText.Text = "フォルダ名が空です";
+                    return;
+                }
+
+                try
+                {
+                    var newFolderPath = System.IO.Path.Combine(selectedItem.Path, folderName);
+                    if (System.IO.Directory.Exists(newFolderPath))
+                    {
+                        StatusBarText.Text = "同名のフォルダが既に存在します";
+                        return;
+                    }
+
+                    System.IO.Directory.CreateDirectory(newFolderPath);
+                    StatusBarText.Text = $"フォルダ '{folderName}' を作成しました";
+
+                    // ツリーを更新
+                    vm.DestinationFolderTree.RefreshFolder(selectedItem.Path);
+                }
+                catch (Exception ex)
+                {
+                    StatusBarText.Text = $"フォルダ作成エラー: {ex.Message}";
+                }
+            }
+
+            this.Focus();
+        }
+
         private void AssignShortcut_Click(object sender, RoutedEventArgs e)
         {
             var menuItem = sender as MenuItem;
@@ -209,6 +257,43 @@ namespace MediaOrganizeViewer
                 if (found != null) return found;
             }
             return null;
+        }
+
+        private void Window_DragOver(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                var vm = DataContext as MainViewModel;
+
+                if (files.Length == 1 && vm != null && vm.IsSupportedFile(files[0]))
+                {
+                    e.Effects = DragDropEffects.Copy;
+                }
+                else
+                {
+                    e.Effects = DragDropEffects.None;
+                }
+            }
+            else
+            {
+                e.Effects = DragDropEffects.None;
+            }
+            e.Handled = true;
+        }
+
+        private async void Window_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                var vm = DataContext as MainViewModel;
+
+                if (files.Length == 1 && vm != null && vm.IsSupportedFile(files[0]))
+                {
+                    await vm.LoadMediaAsync(files[0]);
+                }
+            }
         }
     }
 }
