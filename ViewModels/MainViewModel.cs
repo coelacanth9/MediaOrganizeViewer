@@ -25,6 +25,9 @@ namespace MediaOrganizeViewer.ViewModels
         [ObservableProperty]
         private MediaContent? _currentMedia;
 
+        [ObservableProperty]
+        private string _statusText = "準備完了";
+
         public MainViewModel(ISettingsService settingsService)
         {
             _settingsService = settingsService;
@@ -62,26 +65,43 @@ namespace MediaOrganizeViewer.ViewModels
         private async void RestoreLastViewedFile()
         {
             var lastPath = _settingsService.LastViewedFilePath;
-            if (!string.IsNullOrEmpty(lastPath) && System.IO.File.Exists(lastPath))
+            if (string.IsNullOrEmpty(lastPath))
+                return;
+
+            try
             {
-                try
+                // ステップ1: 最終閲覧ファイルが存在する？
+                if (System.IO.File.Exists(lastPath))
                 {
                     await LoadMediaAsync(lastPath);
+                    return;
                 }
-                catch (Exception ex)
+
+                // ステップ2: 最終閲覧ファイルのフォルダが存在する？
+                var lastFolder = System.IO.Path.GetDirectoryName(lastPath);
+                if (!string.IsNullOrEmpty(lastFolder) && System.IO.Directory.Exists(lastFolder))
                 {
-                    System.Diagnostics.Debug.WriteLine($"最終閲覧位置の復元エラー: {ex.Message}");
+                    // そのフォルダ内の対応ファイル（全種類）の最初のものを開く
+                    var firstFile = GetFirstSupportedFileInFolder(lastFolder);
+                    if (firstFile != null)
+                    {
+                        await LoadMediaAsync(firstFile);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"最終閲覧位置の復元エラー: {ex.Message}");
             }
         }
 
         private async Task OnSourceFolderSelectedAsync(string folderPath)
         {
-            // フォルダ内の最初のzipを探す
-            var firstZip = System.IO.Directory.EnumerateFiles(folderPath, "*.zip").FirstOrDefault();
-            if (firstZip != null)
+            // フォルダ内の対応ファイル（全種類）の最初のものを開く
+            var firstFile = GetFirstSupportedFileInFolder(folderPath);
+            if (firstFile != null)
             {
-                await LoadMediaAsync(firstZip);
+                await LoadMediaAsync(firstFile);
             }
         }
 
@@ -90,15 +110,64 @@ namespace MediaOrganizeViewer.ViewModels
         {
             if (CurrentMedia != null)
             {
+                CurrentMedia.PropertyChanged -= OnCurrentMediaPropertyChanged;
                 CurrentMedia.Dispose();
             }
 
             CurrentMedia = MediaFactory.Create(path);
+            CurrentMedia.PropertyChanged += OnCurrentMediaPropertyChanged;
             await CurrentMedia.LoadAsync();
+
+            // ステータスバー更新
+            UpdateStatusText();
 
             // 最終閲覧位置を保存
             _settingsService.LastViewedFilePath = path;
             _settingsService.Save();
+        }
+
+        private void OnCurrentMediaPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            // ページ情報が変更されたらステータスバーを更新
+            if (e.PropertyName == nameof(IPageNavigable.CurrentPage))
+            {
+                UpdateStatusText();
+            }
+        }
+
+        private void UpdateStatusText()
+        {
+            if (CurrentMedia == null)
+            {
+                StatusText = "準備完了";
+                return;
+            }
+
+            var fileName = System.IO.Path.GetFileName(CurrentMedia.Path);
+
+            // ZIPの場合はページ情報も表示
+            if (CurrentMedia is IPageNavigable navigable)
+            {
+                StatusText = $"{fileName} - {navigable.CurrentPage + 1}/{navigable.TotalPages} ページ";
+            }
+            else
+            {
+                StatusText = fileName;
+            }
+        }
+
+        /// <summary>
+        /// 現在表示中のメディアをアンロード
+        /// </summary>
+        public void UnloadMedia()
+        {
+            if (CurrentMedia != null)
+            {
+                CurrentMedia.PropertyChanged -= OnCurrentMediaPropertyChanged;
+                CurrentMedia.Dispose();
+                CurrentMedia = null;
+            }
+            StatusText = "アンロードしました";
         }
 
         public bool IsSupportedFile(string path)
@@ -108,6 +177,20 @@ namespace MediaOrganizeViewer.ViewModels
                    ext == ".jpg" || ext == ".jpeg" ||
                    ext == ".png" || ext == ".bmp" ||
                    ext == ".gif" || ext == ".webp";
+        }
+
+        /// <summary>
+        /// 指定フォルダ内の対応ファイル（全種類）の最初のものを取得
+        /// </summary>
+        private string? GetFirstSupportedFileInFolder(string folderPath)
+        {
+            if (string.IsNullOrEmpty(folderPath) || !System.IO.Directory.Exists(folderPath))
+                return null;
+
+            return System.IO.Directory.EnumerateFiles(folderPath)
+                .Where(f => IsSupportedFile(f))
+                .OrderBy(f => f)
+                .FirstOrDefault();
         }
 
         public async Task MoveNextMediaAsync(bool forward)
@@ -187,6 +270,7 @@ namespace MediaOrganizeViewer.ViewModels
                 var currentIndex = sourceFiles.IndexOf(currentFilePath);
 
                 // 重要: ファイル移動前にCurrentMediaを解放してファイルロックを解除
+                CurrentMedia.PropertyChanged -= OnCurrentMediaPropertyChanged;
                 CurrentMedia.Dispose();
                 CurrentMedia = null;
 

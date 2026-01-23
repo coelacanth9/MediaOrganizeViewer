@@ -34,7 +34,15 @@ namespace MediaOrganizeViewer
             }
 
             switch (e.Key)
-            {   // フォルダ内移動
+            {
+                // メディアをアンロード
+                case Key.Escape:
+                    e.Handled = true;
+                    vm.UnloadMedia();
+                    this.Focus();
+                    return;
+
+                // フォルダ内移動
                 case Key.PageUp:
                 case Key.PageDown:
                     e.Handled = true;
@@ -62,10 +70,7 @@ namespace MediaOrganizeViewer
             if (vm == null) return;
 
             // ファイルを移動して次のファイルパスを取得
-            var nextFilePath = vm.QuickMoveToFolder(shortcutKey, (status) =>
-            {
-                StatusBarText.Text = status;
-            });
+            var nextFilePath = vm.QuickMoveToFolder(shortcutKey, SetStatusText);
 
             // 次のファイルがある場合はロード
             if (!string.IsNullOrEmpty(nextFilePath))
@@ -140,7 +145,7 @@ namespace MediaOrganizeViewer
             var selectedItem = FindSelectedItem(vm.DestinationFolderTree.Items);
             if (selectedItem == null || string.IsNullOrEmpty(selectedItem.Path))
             {
-                StatusBarText.Text = "フォルダを選択してください";
+                SetStatusText("フォルダを選択してください");
                 return;
             }
 
@@ -151,7 +156,7 @@ namespace MediaOrganizeViewer
                 var folderName = dialog.InputText.Trim();
                 if (string.IsNullOrEmpty(folderName))
                 {
-                    StatusBarText.Text = "フォルダ名が空です";
+                    SetStatusText("フォルダ名が空です");
                     return;
                 }
 
@@ -160,19 +165,19 @@ namespace MediaOrganizeViewer
                     var newFolderPath = System.IO.Path.Combine(selectedItem.Path, folderName);
                     if (System.IO.Directory.Exists(newFolderPath))
                     {
-                        StatusBarText.Text = "同名のフォルダが既に存在します";
+                        SetStatusText("同名のフォルダが既に存在します");
                         return;
                     }
 
                     System.IO.Directory.CreateDirectory(newFolderPath);
-                    StatusBarText.Text = $"フォルダ '{folderName}' を作成しました";
+                    SetStatusText($"フォルダ '{folderName}' を作成しました");
 
                     // ツリーを更新
                     vm.DestinationFolderTree.RefreshFolder(selectedItem.Path);
                 }
                 catch (Exception ex)
                 {
-                    StatusBarText.Text = $"フォルダ作成エラー: {ex.Message}";
+                    SetStatusText($"フォルダ作成エラー: {ex.Message}");
                 }
             }
 
@@ -212,7 +217,7 @@ namespace MediaOrganizeViewer
             selectedItem.AssignedShortcut = shortcutKey;
 
             // ステータスバーに通知
-            StatusBarText.Text = $"フォルダ '{selectedItem.Name}' に {shortcutKey} を割り当てました";
+            SetStatusText($"フォルダ '{selectedItem.Name}' に {shortcutKey} を割り当てました");
         }
 
         private void RemoveShortcut_Click(object sender, RoutedEventArgs e)
@@ -245,7 +250,7 @@ namespace MediaOrganizeViewer
             selectedItem.AssignedShortcut = string.Empty;
 
             // ステータスバーに通知
-            StatusBarText.Text = $"フォルダ '{selectedItem.Name}' のショートカットを解除しました";
+            SetStatusText($"フォルダ '{selectedItem.Name}' のショートカットを解除しました");
         }
 
         private FolderTreeItem? FindSelectedItem(System.Collections.ObjectModel.ObservableCollection<FolderTreeItem> items)
@@ -257,6 +262,25 @@ namespace MediaOrganizeViewer
                 if (found != null) return found;
             }
             return null;
+        }
+
+        private void SetStatusText(string text)
+        {
+            var vm = DataContext as MainViewModel;
+            if (vm != null)
+            {
+                vm.StatusText = text;
+            }
+        }
+
+        private void UnloadMedia_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as MainViewModel;
+            if (vm != null)
+            {
+                vm.UnloadMedia();
+            }
+            this.Focus();
         }
 
         private void Window_DragOver(object sender, DragEventArgs e)

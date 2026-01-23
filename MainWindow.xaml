@@ -87,7 +87,17 @@
 
         <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="#CCC"/>
 
-        <Border Grid.Column="2" Background="Black">
+        <Border Grid.Column="2">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Background" Value="Black"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding CurrentMedia}" Value="{x:Null}">
+                            <Setter Property="Background" Value="#F5F5F5"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
             <Grid>
                 <core:MediaViewHost CurrentMedia="{Binding CurrentMedia}" />
                 <ProgressBar VerticalAlignment="Bottom" Height="4" IsIndeterminate="True"
@@ -101,7 +111,10 @@
         <!-- ステータスバー -->
         <StatusBar Grid.Row="1" Background="#F0F0F0">
             <StatusBarItem>
-                <TextBlock x:Name="StatusBarText" Text="準備完了" />
+                <TextBlock x:Name="StatusBarText" Text="{Binding StatusText}" />
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <Button Content="❌ 閉じる(ESC)" Click="UnloadMedia_Click" Padding="5,2"/>
             </StatusBarItem>
         </StatusBar>
     </Grid>
