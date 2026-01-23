@@ -72,6 +72,7 @@
 MediaFactory.Register(".mp4", path => new VideoContent(path));
 ```
 2. MediaTemplates.xamlへのDataTemplate追加
+   
   シンプルな場合は、対応するコントロールを直接配置するだけで完了します。
   ```xml
   <DataTemplate DataType="{x:Type local:VideoContent}">
