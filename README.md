@@ -3,8 +3,8 @@
   メディアファイルを閲覧しながら、キーボード操作でフォルダへ振り分け・整理できるWindows向けデスクトップアプリケーションです
   。
 
-  <img width="986" height="693" alt="スクリーンショット"
-  src="https://github.com/user-attachments/assets/c6cdc898-2639-4821-9c0c-17697fe08c83" />
+<img width="986" height="693" alt="スクリーンショット 2026-01-23 121027" src="https://github.com/user-attachments/assets/289eb34d-c4f9-4339-9b91-15e625a54af6" />
+
 
   ## 主な機能
 
