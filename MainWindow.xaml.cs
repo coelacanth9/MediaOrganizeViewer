@@ -18,6 +18,10 @@ namespace MediaOrganizeViewer
 
             AddHandler(MediaControlBar.NextMediaRequestedEvent, new RoutedEventHandler(OnNextMediaRequested));
             AddHandler(MediaControlBar.PrevMediaRequestedEvent, new RoutedEventHandler(OnPrevMediaRequested));
+            AddHandler(MediaControlBar.SkipIntervalChangedEvent, new RoutedEventHandler(OnSkipIntervalChanged));
+
+            // 保存されたスキップ間隔を復元
+            MediaControlBar.DefaultSkipSeconds = settingsService.SkipIntervalSeconds;
         }
 
         private async void OnNextMediaRequested(object sender, RoutedEventArgs e)
@@ -27,6 +31,16 @@ namespace MediaOrganizeViewer
             {
                 await vm.MoveNextMediaAsync(true);
                 this.Focus();
+            }
+        }
+
+        private void OnSkipIntervalChanged(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as MainViewModel;
+            if (vm != null)
+            {
+                vm.SettingsService.SkipIntervalSeconds = MediaControlBar.DefaultSkipSeconds;
+                vm.SettingsService.Save();
             }
         }
 
@@ -78,6 +92,18 @@ namespace MediaOrganizeViewer
                 {
                     e.Handled = true;
                     vm.SourceFolderTree.SelectNextFolder();
+                    return;
+                }
+                if (e.Key == Key.Right)
+                {
+                    e.Handled = true;
+                    vm.SourceFolderTree.ExpandSelectedFolder();
+                    return;
+                }
+                if (e.Key == Key.Left)
+                {
+                    e.Handled = true;
+                    vm.SourceFolderTree.CollapseSelectedFolder();
                     return;
                 }
                 if (e.Key == Key.Z)

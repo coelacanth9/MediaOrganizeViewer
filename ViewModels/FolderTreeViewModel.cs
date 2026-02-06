@@ -217,6 +217,30 @@ namespace MediaOrganizeViewer.ViewModels
         }
 
         /// <summary>
+        /// 選択中のフォルダを展開（Ctrl+Right用）
+        /// </summary>
+        public void ExpandSelectedFolder()
+        {
+            var selected = EnumerateVisible(Items).FirstOrDefault(i => i.IsSelected);
+            if (selected != null && selected.Children.Count > 0)
+            {
+                selected.IsExpanded = true;
+            }
+        }
+
+        /// <summary>
+        /// 選択中のフォルダを縮小（Ctrl+Left用）
+        /// </summary>
+        public void CollapseSelectedFolder()
+        {
+            var selected = EnumerateVisible(Items).FirstOrDefault(i => i.IsSelected);
+            if (selected != null)
+            {
+                selected.IsExpanded = false;
+            }
+        }
+
+        /// <summary>
         /// 展開済みの可視ツリーアイテムをフラット順に列挙
         /// </summary>
         private IEnumerable<FolderTreeItem> EnumerateVisible(ObservableCollection<FolderTreeItem> items)

@@ -23,6 +23,7 @@ namespace MediaOrganizeViewer
 
         // 「ショトカのやつ」であることが明確な名前に変更
         private List<FolderDestination> _shortcutFolders = new List<FolderDestination>();
+        private int _skipIntervalSeconds = 10;
 
         public AppConfigSettingsService()
         {
@@ -56,11 +57,18 @@ namespace MediaOrganizeViewer
             set => SetProperty(ref _shortcutFolders, value);
         }
 
+        public int SkipIntervalSeconds
+        {
+            get => _skipIntervalSeconds;
+            set => SetProperty(ref _skipIntervalSeconds, value);
+        }
+
         public void Load()
         {
             SourceRootPath = Settings.Default.SourceRootPath;
             DestinationRootPath = Settings.Default.DestinationRootPath;
             LastViewedFilePath = Settings.Default.LastViewedFilePath;
+            SkipIntervalSeconds = Settings.Default.SkipIntervalSeconds;
 
             // Settings.Default.FolderShortcuts (JSON) から _shortcutFolders への復元
             var json = Settings.Default.FolderShortcuts;
@@ -87,6 +95,7 @@ namespace MediaOrganizeViewer
             Settings.Default.SourceRootPath = SourceRootPath;
             Settings.Default.DestinationRootPath = DestinationRootPath;
             Settings.Default.LastViewedFilePath = LastViewedFilePath;
+            Settings.Default.SkipIntervalSeconds = SkipIntervalSeconds;
 
             // _shortcutFolders から Settings.Default.FolderShortcuts (JSON) への保存
             try

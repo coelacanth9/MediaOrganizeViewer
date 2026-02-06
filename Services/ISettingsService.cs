@@ -30,6 +30,11 @@ namespace MediaOrganizeViewer
         List<FolderDestination> ShortcutFolders { get; set; }
 
         /// <summary>
+        /// スキップ間隔（秒）
+        /// </summary>
+        int SkipIntervalSeconds { get; set; }
+
+        /// <summary>
         /// 物理設定からデータを読み込む
         /// </summary>
         void Load();
