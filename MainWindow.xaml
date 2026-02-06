@@ -55,11 +55,15 @@
                         <ContextMenu>
                             <MenuItem Header="新規フォルダ作成" Click="CreateFolder_Click"/>
                             <Separator/>
-                            <MenuItem Header="F1に割り当て" Click="AssignShortcut_Click" Tag="F1"/>
-                            <MenuItem Header="F2に割り当て" Click="AssignShortcut_Click" Tag="F2"/>
-                            <MenuItem Header="F3に割り当て" Click="AssignShortcut_Click" Tag="F3"/>
-                            <MenuItem Header="F4に割り当て" Click="AssignShortcut_Click" Tag="F4"/>
-                            <MenuItem Header="F5に割り当て" Click="AssignShortcut_Click" Tag="F5"/>
+                            <MenuItem Header="Alt+1に割り当て" Click="AssignShortcut_Click" Tag="1"/>
+                            <MenuItem Header="Alt+2に割り当て" Click="AssignShortcut_Click" Tag="2"/>
+                            <MenuItem Header="Alt+3に割り当て" Click="AssignShortcut_Click" Tag="3"/>
+                            <MenuItem Header="Alt+4に割り当て" Click="AssignShortcut_Click" Tag="4"/>
+                            <MenuItem Header="Alt+5に割り当て" Click="AssignShortcut_Click" Tag="5"/>
+                            <MenuItem Header="Alt+6に割り当て" Click="AssignShortcut_Click" Tag="6"/>
+                            <MenuItem Header="Alt+7に割り当て" Click="AssignShortcut_Click" Tag="7"/>
+                            <MenuItem Header="Alt+8に割り当て" Click="AssignShortcut_Click" Tag="8"/>
+                            <MenuItem Header="Alt+9に割り当て" Click="AssignShortcut_Click" Tag="9"/>
                             <Separator/>
                             <MenuItem Header="ショートカット解除" Click="RemoveShortcut_Click"/>
                         </ContextMenu>
@@ -97,9 +101,13 @@
                          PreviewMouseUp="FileListBox_PreviewMouseUp">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Name}"
-                                       TextTrimming="CharacterEllipsis"
-                                       ToolTip="{Binding Path}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <CheckBox IsChecked="{Binding IsChecked}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBlock Text="{Binding Name}"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding Path}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>

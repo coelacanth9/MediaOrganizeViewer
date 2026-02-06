@@ -283,9 +283,9 @@ namespace MediaOrganizeViewer.ViewModels
         /// <summary>
         /// ショートカットキーを使ってファイルを移動
         /// </summary>
-        public string? QuickMoveToFolder(string? shortcutKey, Action<string> updateStatus)
+        public async Task<string?> QuickMoveToFolderAsync(string? shortcutKey, Action<string> updateStatus)
         {
-            if (CurrentMedia == null || string.IsNullOrEmpty(shortcutKey))
+            if (string.IsNullOrEmpty(shortcutKey))
             {
                 updateStatus("移動するファイルがありません");
                 return null;
@@ -296,17 +296,27 @@ namespace MediaOrganizeViewer.ViewModels
 
             if (string.IsNullOrEmpty(destinationFolder))
             {
-                updateStatus($"ショートカットキー '{shortcutKey}' に対応するフォルダが見つかりません");
+                updateStatus($"ショートカットキー 'Alt+{shortcutKey}' に対応するフォルダが見つかりません");
                 return null;
             }
 
-            return MoveToFolder(destinationFolder, updateStatus);
+            // チェック済みファイルがあれば一括移動
+            if (HasCheckedFiles)
+                return await MoveCheckedToFolderAsync(destinationFolder, updateStatus);
+
+            if (CurrentMedia == null)
+            {
+                updateStatus("移動するファイルがありません");
+                return null;
+            }
+
+            return await MoveToFolderAsync(destinationFolder, updateStatus);
         }
 
         /// <summary>
         /// 指定フォルダへファイルを移動
         /// </summary>
-        public string? MoveToFolder(string destinationFolder, Action<string> updateStatus)
+        public async Task<string?> MoveToFolderAsync(string destinationFolder, Action<string> updateStatus)
         {
             if (CurrentMedia == null)
             {
@@ -344,8 +354,8 @@ namespace MediaOrganizeViewer.ViewModels
                 CurrentMedia.Dispose();
                 CurrentMedia = null;
 
-                // ファイル移動実行
-                System.IO.File.Move(currentFilePath, destinationPath);
+                // ファイル移動実行（非同期）
+                await Task.Run(() => System.IO.File.Move(currentFilePath, destinationPath));
                 _moveHistory.Push(new MoveRecord(currentFilePath, destinationPath));
 
                 // ファイルリストから移動済みアイテムを削除
@@ -382,6 +392,132 @@ namespace MediaOrganizeViewer.ViewModels
                 return null;
             }
         }
+        /// <summary>
+        /// チェック済みファイルがあるか
+        /// </summary>
+        public bool HasCheckedFiles => FileList.Any(f => f.IsChecked);
+
+        /// <summary>
+        /// チェック済みファイルを一括移動
+        /// </summary>
+        public async Task<string?> MoveCheckedToFolderAsync(string destinationFolder, Action<string> updateStatus)
+        {
+            if (!System.IO.Directory.Exists(destinationFolder))
+            {
+                updateStatus($"移動先フォルダが存在しません: {destinationFolder}");
+                return null;
+            }
+
+            var checkedItems = FileList.Where(f => f.IsChecked).ToList();
+            if (checkedItems.Count == 0)
+            {
+                updateStatus("チェックされたファイルがありません");
+                return null;
+            }
+
+            // 現在表示中のファイルがチェック済みか判定
+            bool currentIncluded = CurrentMedia != null && checkedItems.Any(f => f.Path == CurrentMedia.Path);
+
+            // 現在表示中のファイルが含まれる場合は解放
+            if (currentIncluded && CurrentMedia != null)
+            {
+                CurrentMedia.PropertyChanged -= OnCurrentMediaPropertyChanged;
+                CurrentMedia.Dispose();
+                CurrentMedia = null;
+            }
+
+            int movedCount = 0;
+            int skippedCount = 0;
+
+            foreach (var item in checkedItems)
+            {
+                try
+                {
+                    var fileName = System.IO.Path.GetFileName(item.Path);
+                    var destPath = System.IO.Path.Combine(destinationFolder, fileName);
+
+                    if (System.IO.File.Exists(destPath))
+                    {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    await Task.Run(() => System.IO.File.Move(item.Path, destPath));
+                    _moveHistory.Push(new MoveRecord(item.Path, destPath));
+                    FileList.Remove(item);
+                    movedCount++;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"一括移動エラー: {ex.Message}");
+                    skippedCount++;
+                }
+            }
+
+            var folderName = System.IO.Path.GetFileName(destinationFolder);
+            var msg = $"{movedCount}件を{folderName}に移動しました";
+            if (skippedCount > 0) msg += $" ({skippedCount}件スキップ)";
+            updateStatus(msg);
+
+            _settingsService.LastViewedFilePath = string.Empty;
+            _settingsService.Save();
+
+            // 次に表示するファイルを返す
+            if (currentIncluded && FileList.Count > 0)
+            {
+                return FileList[0].Path;
+            }
+
+            return currentIncluded ? null : CurrentMedia?.Path;
+        }
+
+        /// <summary>
+        /// 現在のファイルをリネーム
+        /// </summary>
+        public async Task<bool> RenameCurrentFileAsync(string newFileName, Action<string> updateStatus)
+        {
+            if (CurrentMedia == null)
+            {
+                updateStatus("リネームするファイルがありません");
+                return false;
+            }
+
+            var currentPath = CurrentMedia.Path;
+            var directory = System.IO.Path.GetDirectoryName(currentPath);
+            if (string.IsNullOrEmpty(directory)) return false;
+
+            var newPath = System.IO.Path.Combine(directory, newFileName);
+
+            if (currentPath == newPath) return false;
+
+            if (System.IO.File.Exists(newPath))
+            {
+                updateStatus("同名のファイルが既に存在します");
+                return false;
+            }
+
+            try
+            {
+                // メディア解放 → リネーム → 再ロード
+                CurrentMedia.PropertyChanged -= OnCurrentMediaPropertyChanged;
+                CurrentMedia.Dispose();
+                CurrentMedia = null;
+
+                System.IO.File.Move(currentPath, newPath);
+
+                RefreshFileList(directory);
+                await LoadMediaAsync(newPath);
+
+                updateStatus($"リネームしました: {newFileName}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                updateStatus($"リネームエラー: {ex.Message}");
+                return false;
+            }
+        }
+
         /// <summary>
         /// 直前のファイル移動を元に戻す
         /// </summary>

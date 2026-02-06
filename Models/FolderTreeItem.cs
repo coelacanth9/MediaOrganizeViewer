@@ -34,7 +34,7 @@ namespace MediaOrganizeViewer.ViewModels
         // TreeViewでの表示名（ショートカットがある場合は [F1] などを付与）
         public string DisplayName => string.IsNullOrEmpty(AssignedShortcut)
             ? Name
-            : $"{Name} [{AssignedShortcut}]";
+            : $"{Name} [Alt+{AssignedShortcut}]";
 
         // 子要素のコレクション
         public ObservableCollection<FolderTreeItem> Children { get; } = new();

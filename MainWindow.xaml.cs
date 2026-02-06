@@ -74,11 +74,32 @@ namespace MediaOrganizeViewer
             var vm = DataContext as MainViewModel;
             if (vm == null) return;
 
-            // F1-F5によるショートカットジャンプ
-            if (e.Key >= Key.F1 && e.Key <= Key.F5)
+            // Alt+1-9によるショートカットジャンプ
+            if (Keyboard.Modifiers == ModifierKeys.Alt && e.Key >= Key.D1 && e.Key <= Key.D9)
             {
                 e.Handled = true;
-                MoveFileAndLoadNext(vm.QuickMoveToFolder(e.Key.ToString(), SetStatusText));
+                var shortcutKey = (e.Key - Key.D0).ToString();
+                await MoveFileAndLoadNextAsync(vm.QuickMoveToFolderAsync(shortcutKey, SetStatusText));
+                this.Focus();
+                return;
+            }
+
+            // F2: リネーム
+            if (e.Key == Key.F2 && vm.CurrentMedia != null)
+            {
+                e.Handled = true;
+                var currentName = System.IO.Path.GetFileName(vm.CurrentMedia.Path);
+                var ext = System.IO.Path.GetExtension(currentName);
+                var nameWithoutExt = System.IO.Path.GetFileNameWithoutExtension(currentName);
+                var dialog = new TextInputDialog("リネーム", "新しいファイル名を入力してください:", nameWithoutExt);
+                if (dialog.ShowDialog() == true)
+                {
+                    var newName = dialog.InputText.Trim();
+                    if (!string.IsNullOrEmpty(newName))
+                    {
+                        _ = vm.RenameCurrentFileAsync(newName + ext, SetStatusText);
+                    }
+                }
                 this.Focus();
                 return;
             }
@@ -151,8 +172,10 @@ namespace MediaOrganizeViewer
                 var selected = FindSelectedItem(vm.DestinationFolderTree.Items);
                 if (selected == null || string.IsNullOrEmpty(selected.Path))
                     SetStatusText("移動先フォルダを選択してください");
+                else if (vm.HasCheckedFiles)
+                    await MoveFileAndLoadNextAsync(vm.MoveCheckedToFolderAsync(selected.Path, SetStatusText));
                 else
-                    MoveFileAndLoadNext(vm.MoveToFolder(selected.Path, SetStatusText));
+                    await MoveFileAndLoadNextAsync(vm.MoveToFolderAsync(selected.Path, SetStatusText));
                 this.Focus();
                 return;
             }
@@ -205,10 +228,12 @@ namespace MediaOrganizeViewer
         /// <summary>
         /// ファイルを移動して次のファイルをロード（共通処理）
         /// </summary>
-        private async void MoveFileAndLoadNext(string? nextFilePath)
+        private async Task MoveFileAndLoadNextAsync(Task<string?> moveTask)
         {
             var vm = DataContext as MainViewModel;
             if (vm == null) return;
+
+            var nextFilePath = await moveTask;
 
             if (!string.IsNullOrEmpty(nextFilePath))
             {
@@ -369,7 +394,7 @@ namespace MediaOrganizeViewer
             selectedItem.AssignedShortcut = shortcutKey;
 
             // ステータスバーに通知
-            SetStatusText($"フォルダ '{selectedItem.Name}' に {shortcutKey} を割り当てました");
+            SetStatusText($"フォルダ '{selectedItem.Name}' に Alt+{shortcutKey} を割り当てました");
         }
 
         private void RemoveShortcut_Click(object sender, RoutedEventArgs e)
