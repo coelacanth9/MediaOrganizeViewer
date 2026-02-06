@@ -13,8 +13,30 @@ namespace MediaOrganizeViewer
         {
             InitializeComponent();
             var settingsService = new AppConfigSettingsService();
-            // DataContext をセットすることで XAML と ViewModel が繋がる
             this.DataContext = new MainViewModel(settingsService);
+
+            AddHandler(MediaControlBar.NextMediaRequestedEvent, new RoutedEventHandler(OnNextMediaRequested));
+            AddHandler(MediaControlBar.PrevMediaRequestedEvent, new RoutedEventHandler(OnPrevMediaRequested));
+        }
+
+        private async void OnNextMediaRequested(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as MainViewModel;
+            if (vm != null)
+            {
+                await vm.MoveNextMediaAsync(true);
+                this.Focus();
+            }
+        }
+
+        private async void OnPrevMediaRequested(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as MainViewModel;
+            if (vm != null)
+            {
+                await vm.MoveNextMediaAsync(false);
+                this.Focus();
+            }
         }
 
         protected override async void OnPreviewKeyDown(KeyEventArgs e)
