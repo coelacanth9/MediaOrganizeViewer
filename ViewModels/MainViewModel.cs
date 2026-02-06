@@ -9,9 +9,15 @@ using System.Threading.Tasks;
 
 namespace MediaOrganizeViewer.ViewModels
 {
+    /// <summary>
+    /// ファイル移動の履歴レコード
+    /// </summary>
+    public record MoveRecord(string SourcePath, string DestinationPath);
+
     public partial class MainViewModel : ObservableObject
     {
         private readonly ISettingsService _settingsService;
+        private readonly Stack<MoveRecord> _moveHistory = new();
 
         // SettingsServiceを外部から参照できるように公開
         public ISettingsService SettingsService => _settingsService;
@@ -293,6 +299,7 @@ namespace MediaOrganizeViewer.ViewModels
 
                 // ファイル移動実行
                 System.IO.File.Move(currentFilePath, destinationPath);
+                _moveHistory.Push(new MoveRecord(currentFilePath, destinationPath));
 
                 // フォルダ名を取得して表示
                 var folderName = System.IO.Path.GetFileName(destinationFolder);
@@ -321,6 +328,70 @@ namespace MediaOrganizeViewer.ViewModels
             {
                 updateStatus($"ファイル移動エラー: {ex.Message}");
                 return null;
+            }
+        }
+        /// <summary>
+        /// 直前のファイル移動を元に戻す
+        /// </summary>
+        public async Task<bool> UndoMoveAsync(Action<string> updateStatus)
+        {
+            if (_moveHistory.Count == 0)
+            {
+                updateStatus("元に戻す履歴がありません");
+                return false;
+            }
+
+            var record = _moveHistory.Peek();
+
+            // 移動先にファイルがまだあるか
+            if (!System.IO.File.Exists(record.DestinationPath))
+            {
+                _moveHistory.Pop();
+                updateStatus("元に戻せません: 移動先のファイルが見つかりません");
+                return false;
+            }
+
+            // 元のフォルダがまだあるか
+            var sourceDir = System.IO.Path.GetDirectoryName(record.SourcePath);
+            if (string.IsNullOrEmpty(sourceDir) || !System.IO.Directory.Exists(sourceDir))
+            {
+                _moveHistory.Pop();
+                updateStatus("元に戻せません: 元のフォルダが存在しません");
+                return false;
+            }
+
+            // 元の場所に同名ファイルがないか
+            if (System.IO.File.Exists(record.SourcePath))
+            {
+                _moveHistory.Pop();
+                updateStatus("元に戻せません: 元の場所に同名ファイルが存在します");
+                return false;
+            }
+
+            try
+            {
+                // 現在表示中のメディアを解放
+                if (CurrentMedia != null)
+                {
+                    CurrentMedia.PropertyChanged -= OnCurrentMediaPropertyChanged;
+                    CurrentMedia.Dispose();
+                    CurrentMedia = null;
+                }
+
+                System.IO.File.Move(record.DestinationPath, record.SourcePath);
+                _moveHistory.Pop();
+
+                var fileName = System.IO.Path.GetFileName(record.SourcePath);
+                updateStatus($"元に戻しました: {fileName}");
+
+                // 戻したファイルを表示
+                await LoadMediaAsync(record.SourcePath);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                updateStatus($"元に戻す際にエラー: {ex.Message}");
+                return false;
             }
         }
     }

@@ -64,7 +64,7 @@ namespace MediaOrganizeViewer
                 return;
             }
 
-            // Ctrl+Up/Down: ソースツリーのフォルダ移動
+            // Ctrl系ショートカット
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
                 if (e.Key == Key.Up)
@@ -77,6 +77,13 @@ namespace MediaOrganizeViewer
                 {
                     e.Handled = true;
                     vm.SourceFolderTree.SelectNextFolder();
+                    return;
+                }
+                if (e.Key == Key.Z)
+                {
+                    e.Handled = true;
+                    _ = vm.UndoMoveAsync(SetStatusText);
+                    this.Focus();
                     return;
                 }
             }
