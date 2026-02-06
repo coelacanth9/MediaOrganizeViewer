@@ -177,7 +177,8 @@ namespace MediaOrganizeViewer.ViewModels
                    ext == ".jpg" || ext == ".jpeg" ||
                    ext == ".png" || ext == ".bmp" ||
                    ext == ".gif" || ext == ".webp" ||
-                   ext == ".mp4";
+                   ext == ".mp4" ||
+                   ext == ".mp3" || ext == ".wav" || ext == ".flac";
         }
 
         /// <summary>
