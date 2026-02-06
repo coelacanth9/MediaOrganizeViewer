@@ -22,6 +22,19 @@ namespace MediaOrganizeViewer
 
             // 保存されたスキップ間隔を復元
             MediaControlBar.DefaultSkipSeconds = settingsService.SkipIntervalSeconds;
+
+            // ファイルリスト選択変更時にスクロール追従
+            var vm = DataContext as MainViewModel;
+            if (vm != null)
+            {
+                vm.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == nameof(MainViewModel.SelectedFileItem) && vm.SelectedFileItem != null)
+                    {
+                        FileListBox.ScrollIntoView(vm.SelectedFileItem);
+                    }
+                };
+            }
         }
 
         private async void OnNextMediaRequested(object sender, RoutedEventArgs e)
@@ -406,6 +419,11 @@ namespace MediaOrganizeViewer
             {
                 vm.StatusText = text;
             }
+        }
+
+        private void FileListBox_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            this.Focus();
         }
 
         private void UnloadMedia_Click(object sender, RoutedEventArgs e)

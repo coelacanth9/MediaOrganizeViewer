@@ -2,6 +2,7 @@
 using MediaViewer.Core;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -33,6 +34,12 @@ namespace MediaOrganizeViewer.ViewModels
 
         [ObservableProperty]
         private string _statusText = "準備完了";
+
+        [ObservableProperty]
+        private ObservableCollection<FileItem> _fileList = new();
+
+        [ObservableProperty]
+        private FileItem? _selectedFileItem;
 
         public MainViewModel(ISettingsService settingsService)
         {
@@ -79,6 +86,9 @@ namespace MediaOrganizeViewer.ViewModels
                 // ステップ1: 最終閲覧ファイルが存在する？
                 if (System.IO.File.Exists(lastPath))
                 {
+                    var folder = System.IO.Path.GetDirectoryName(lastPath);
+                    if (!string.IsNullOrEmpty(folder))
+                        RefreshFileList(folder);
                     await LoadMediaAsync(lastPath);
                     return;
                 }
@@ -88,6 +98,7 @@ namespace MediaOrganizeViewer.ViewModels
                 if (!string.IsNullOrEmpty(lastFolder) && System.IO.Directory.Exists(lastFolder))
                 {
                     // そのフォルダ内の対応ファイル（全種類）の最初のものを開く
+                    RefreshFileList(lastFolder);
                     var firstFile = GetFirstSupportedFileInFolder(lastFolder);
                     if (firstFile != null)
                     {
@@ -101,8 +112,42 @@ namespace MediaOrganizeViewer.ViewModels
             }
         }
 
+        async partial void OnSelectedFileItemChanged(FileItem? value)
+        {
+            if (value != null && (CurrentMedia == null || CurrentMedia.Path != value.Path))
+            {
+                await LoadMediaAsync(value.Path);
+            }
+        }
+
+        private void RefreshFileList(string folderPath)
+        {
+            FileList.Clear();
+            if (string.IsNullOrEmpty(folderPath) || !System.IO.Directory.Exists(folderPath))
+                return;
+
+            foreach (var f in System.IO.Directory.EnumerateFiles(folderPath)
+                .Where(f => IsSupportedFile(f))
+                .OrderBy(f => f))
+            {
+                FileList.Add(new FileItem(f));
+            }
+        }
+
+        private void SyncSelectedFileItem()
+        {
+            if (CurrentMedia == null)
+            {
+                SelectedFileItem = null;
+                return;
+            }
+            SelectedFileItem = FileList.FirstOrDefault(f => f.Path == CurrentMedia.Path);
+        }
+
         private async Task OnSourceFolderSelectedAsync(string folderPath)
         {
+            RefreshFileList(folderPath);
+
             // フォルダ内の対応ファイル（全種類）の最初のものを開く
             var firstFile = GetFirstSupportedFileInFolder(folderPath);
             if (firstFile != null)
@@ -130,6 +175,8 @@ namespace MediaOrganizeViewer.ViewModels
             // 最終閲覧位置を保存
             _settingsService.LastViewedFilePath = path;
             _settingsService.Save();
+
+            SyncSelectedFileItem();
         }
 
         private void OnCurrentMediaPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -301,6 +348,11 @@ namespace MediaOrganizeViewer.ViewModels
                 System.IO.File.Move(currentFilePath, destinationPath);
                 _moveHistory.Push(new MoveRecord(currentFilePath, destinationPath));
 
+                // ファイルリストから移動済みアイテムを削除
+                var movedItem = FileList.FirstOrDefault(f => f.Path == currentFilePath);
+                if (movedItem != null)
+                    FileList.Remove(movedItem);
+
                 // フォルダ名を取得して表示
                 var folderName = System.IO.Path.GetFileName(destinationFolder);
                 updateStatus($"ファイルを{folderName}に移動しました: {fileName}");
@@ -384,7 +436,11 @@ namespace MediaOrganizeViewer.ViewModels
                 var fileName = System.IO.Path.GetFileName(record.SourcePath);
                 updateStatus($"元に戻しました: {fileName}");
 
-                // 戻したファイルを表示
+                // ファイルリストを再構築して戻したファイルを表示
+                var folder = System.IO.Path.GetDirectoryName(record.SourcePath);
+                if (!string.IsNullOrEmpty(folder))
+                    RefreshFileList(folder);
+
                 await LoadMediaAsync(record.SourcePath);
                 return true;
             }

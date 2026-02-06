@@ -32,6 +32,8 @@
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="5"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="5"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
             <GroupBox Header="Destination (移動先)" Grid.Row="0" Margin="5">
@@ -82,6 +84,25 @@
                         </HierarchicalDataTemplate>
                     </TreeView.ItemTemplate>
                 </TreeView>
+            </GroupBox>
+
+            <GridSplitter Grid.Row="3" Height="5" HorizontalAlignment="Stretch" Background="#CCC"/>
+
+            <GroupBox Header="Files (ファイル一覧)" Grid.Row="4" Margin="5">
+                <ListBox x:Name="FileListBox"
+                         ItemsSource="{Binding FileList}"
+                         SelectedItem="{Binding SelectedFileItem, Mode=TwoWay}"
+                         HorizontalContentAlignment="Stretch"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         PreviewMouseUp="FileListBox_PreviewMouseUp">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding Path}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
             </GroupBox>
         </Grid>
 
