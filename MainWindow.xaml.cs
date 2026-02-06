@@ -472,6 +472,9 @@ namespace MediaOrganizeViewer
 
                 if (files.Length == 1 && vm != null && vm.IsSupportedFile(files[0]))
                 {
+                    var folder = System.IO.Path.GetDirectoryName(files[0]);
+                    if (!string.IsNullOrEmpty(folder))
+                        vm.RefreshFileList(folder);
                     await vm.LoadMediaAsync(files[0]);
                 }
             }

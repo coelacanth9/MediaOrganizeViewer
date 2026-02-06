@@ -120,7 +120,7 @@ namespace MediaOrganizeViewer.ViewModels
             }
         }
 
-        private void RefreshFileList(string folderPath)
+        public void RefreshFileList(string folderPath)
         {
             FileList.Clear();
             if (string.IsNullOrEmpty(folderPath) || !System.IO.Directory.Exists(folderPath))
