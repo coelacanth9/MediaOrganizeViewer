@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using MediaOrganizeViewer.ViewModels;
 using MediaViewer.Core;
@@ -117,7 +118,7 @@ namespace MediaOrganizeViewer
                 return;
             }
 
-            // Left/Right: 書庫/PDF内ページ送り
+            // Left/Right: 書庫/PDFはページ送り、動画/音声はスキップ
             if (e.Key == Key.Left || e.Key == Key.Right)
             {
                 if (vm.CurrentMedia is IPageNavigable navigable)
@@ -126,6 +127,16 @@ namespace MediaOrganizeViewer
                     if (e.Key == Key.Left) navigable.NextPage();
                     else navigable.PrevPage();
                     this.Focus();
+                }
+                else if (vm.CurrentMedia is VideoContent or AudioContent)
+                {
+                    var controlBar = FindMediaControlBar(this);
+                    if (controlBar != null)
+                    {
+                        e.Handled = true;
+                        controlBar.SkipBySeconds(e.Key == Key.Right ? controlBar.SkipSeconds : -controlBar.SkipSeconds);
+                        this.Focus();
+                    }
                 }
             }
         }
@@ -165,6 +176,22 @@ namespace MediaOrganizeViewer
                 vm.CurrentMedia?.Dispose();
                 vm.CurrentMedia = null;
             }
+        }
+
+        /// <summary>
+        /// VisualTreeからMediaControlBarを探す
+        /// </summary>
+        private static MediaControlBar? FindMediaControlBar(DependencyObject parent)
+        {
+            var count = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is MediaControlBar bar) return bar;
+                var found = FindMediaControlBar(child);
+                if (found != null) return found;
+            }
+            return null;
         }
 
         private FolderTreeItem? FindItemByPath(System.Collections.ObjectModel.ObservableCollection<FolderTreeItem> items, string path)
