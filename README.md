@@ -3,7 +3,8 @@
   メディアファイルを閲覧しながら、キーボード操作でフォルダへ振り分け・整理できるWindows向けデスクトップアプリケーションです
   。
 
-<img width="986" height="693" alt="スクリーンショット 2026-01-23 121027" src="https://github.com/user-attachments/assets/289eb34d-c4f9-4339-9b91-15e625a54af6" />
+<img width="986" height="682" alt="image" src="https://github.com/user-attachments/assets/412d2a07-1f2c-412d-aa50-a218d809e1dc" />
+<img width="986" height="693" alt="image" src="https://github.com/user-attachments/assets/a3c91e3b-1b9a-42b8-b374-df42091040ec" />
 
 
   ## 主な機能
@@ -48,10 +49,10 @@
   | F1〜F5 | 表示中のファイルを、割り当てたフォルダへ移動 |
   | Ctrl+Z | ファイル移動を元に戻す（Undo） |
   | ↑ / ↓ | 同じフォルダ内の前 / 次のファイルを表示 |
-  | PageUp / PageDown | 同上（後方互換） |
+  | PageUp / PageDown | 同上 |
   | ← / → | 書庫/PDF内の次ページ / 前ページを表示 |
   | マウスホイール | 書庫/PDF内のページ送り |
-  | Ctrl+↑ / Ctrl+↓ | 移動元ツリーの前 / 次のフォルダを選択 |
+  | Ctrl+↑ / Ctrl+↓ | ツリー上のフォルダ移動 |
   | Esc | 表示中のファイルを閉じる |
 
   ## 動作環境
