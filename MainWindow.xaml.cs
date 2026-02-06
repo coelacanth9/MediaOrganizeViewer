@@ -50,7 +50,7 @@ namespace MediaOrganizeViewer
             if (e.Key >= Key.F1 && e.Key <= Key.F5)
             {
                 e.Handled = true;
-                HandleShortcutKey(e.Key.ToString());
+                MoveFileAndLoadNext(vm.QuickMoveToFolder(e.Key.ToString(), SetStatusText));
                 this.Focus();
                 return;
             }
@@ -97,6 +97,19 @@ namespace MediaOrganizeViewer
                 return;
             }
 
+            // Space: 移動先ツリーで選択中のフォルダへファイル移動
+            if (e.Key == Key.Space)
+            {
+                e.Handled = true;
+                var selected = FindSelectedItem(vm.DestinationFolderTree.Items);
+                if (selected == null || string.IsNullOrEmpty(selected.Path))
+                    SetStatusText("移動先フォルダを選択してください");
+                else
+                    MoveFileAndLoadNext(vm.MoveToFolder(selected.Path, SetStatusText));
+                this.Focus();
+                return;
+            }
+
             // Left/Right: 書庫/PDF内ページ送り
             if (e.Key == Key.Left || e.Key == Key.Right)
             {
@@ -110,22 +123,38 @@ namespace MediaOrganizeViewer
             }
         }
 
-        private async void HandleShortcutKey(string shortcutKey)
+        /// <summary>
+        /// マウスホイールで書庫/PDFのページ送り
+        /// </summary>
+        protected override void OnPreviewMouseWheel(MouseWheelEventArgs e)
+        {
+            base.OnPreviewMouseWheel(e);
+
+            var vm = DataContext as MainViewModel;
+            if (vm?.CurrentMedia is IPageNavigable navigable)
+            {
+                if (e.Delta > 0)
+                    navigable.PrevPage();
+                else if (e.Delta < 0)
+                    navigable.NextPage();
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// ファイルを移動して次のファイルをロード（共通処理）
+        /// </summary>
+        private async void MoveFileAndLoadNext(string? nextFilePath)
         {
             var vm = DataContext as MainViewModel;
             if (vm == null) return;
 
-            // ファイルを移動して次のファイルパスを取得
-            var nextFilePath = vm.QuickMoveToFolder(shortcutKey, SetStatusText);
-
-            // 次のファイルがある場合はロード
             if (!string.IsNullOrEmpty(nextFilePath))
             {
                 await vm.LoadMediaAsync(nextFilePath);
             }
             else
             {
-                // ファイルがなくなった場合はクリア
                 vm.CurrentMedia?.Dispose();
                 vm.CurrentMedia = null;
             }

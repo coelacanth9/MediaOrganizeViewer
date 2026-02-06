@@ -247,7 +247,20 @@ namespace MediaOrganizeViewer.ViewModels
                 return null;
             }
 
-            // フォルダが存在しない場合はエラー
+            return MoveToFolder(destinationFolder, updateStatus);
+        }
+
+        /// <summary>
+        /// 指定フォルダへファイルを移動
+        /// </summary>
+        public string? MoveToFolder(string destinationFolder, Action<string> updateStatus)
+        {
+            if (CurrentMedia == null)
+            {
+                updateStatus("移動するファイルがありません");
+                return null;
+            }
+
             if (!System.IO.Directory.Exists(destinationFolder))
             {
                 updateStatus($"移動先フォルダが存在しません: {destinationFolder}");
@@ -267,7 +280,8 @@ namespace MediaOrganizeViewer.ViewModels
                 }
 
                 var sourceFolder = System.IO.Path.GetDirectoryName(currentFilePath);
-                var sourceFiles = System.IO.Directory.EnumerateFiles(sourceFolder!, "*.zip")
+                var sourceFiles = System.IO.Directory.EnumerateFiles(sourceFolder!)
+                    .Where(f => IsSupportedFile(f))
                     .OrderBy(f => f)
                     .ToList();
                 var currentIndex = sourceFiles.IndexOf(currentFilePath);
@@ -282,7 +296,7 @@ namespace MediaOrganizeViewer.ViewModels
 
                 // フォルダ名を取得して表示
                 var folderName = System.IO.Path.GetFileName(destinationFolder);
-                updateStatus($"ファイルを{folderName}に移動しました: {destinationPath}");
+                updateStatus($"ファイルを{folderName}に移動しました: {fileName}");
 
                 // 前回閲覧ファイルパスをクリア
                 _settingsService.LastViewedFilePath = string.Empty;
@@ -291,7 +305,6 @@ namespace MediaOrganizeViewer.ViewModels
                 // 次のファイルのパスを返す
                 if (currentIndex >= 0 && currentIndex < sourceFiles.Count)
                 {
-                    // 移動したファイルの次のファイルを返す
                     if (currentIndex < sourceFiles.Count - 1)
                     {
                         return sourceFiles[currentIndex + 1];
