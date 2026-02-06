@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -184,6 +185,52 @@ namespace MediaOrganizeViewer.ViewModels
                 // 再度展開させることで LoadChildren が呼ばれる
                 parentItem.IsExpanded = false;
                 parentItem.IsExpanded = true;
+            }
+        }
+
+        /// <summary>
+        /// 次の可視フォルダを選択（Ctrl+Down用）
+        /// </summary>
+        public void SelectNextFolder()
+        {
+            var visible = EnumerateVisible(Items).ToList();
+            var current = visible.FindIndex(i => i.IsSelected);
+            if (current >= 0 && current < visible.Count - 1)
+            {
+                visible[current].IsSelected = false;
+                visible[current + 1].IsSelected = true;
+            }
+        }
+
+        /// <summary>
+        /// 前の可視フォルダを選択（Ctrl+Up用）
+        /// </summary>
+        public void SelectPrevFolder()
+        {
+            var visible = EnumerateVisible(Items).ToList();
+            var current = visible.FindIndex(i => i.IsSelected);
+            if (current > 0)
+            {
+                visible[current].IsSelected = false;
+                visible[current - 1].IsSelected = true;
+            }
+        }
+
+        /// <summary>
+        /// 展開済みの可視ツリーアイテムをフラット順に列挙
+        /// </summary>
+        private IEnumerable<FolderTreeItem> EnumerateVisible(ObservableCollection<FolderTreeItem> items)
+        {
+            foreach (var item in items)
+            {
+                yield return item;
+                if (item.IsExpanded && item.Children.Count > 0)
+                {
+                    foreach (var child in EnumerateVisible(item.Children))
+                    {
+                        yield return child;
+                    }
+                }
             }
         }
 

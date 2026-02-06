@@ -55,34 +55,58 @@ namespace MediaOrganizeViewer
                 return;
             }
 
-            switch (e.Key)
+            // Escape: メディアをアンロード
+            if (e.Key == Key.Escape)
             {
-                // メディアをアンロード
-                case Key.Escape:
-                    e.Handled = true;
-                    vm.UnloadMedia();
-                    this.Focus();
-                    return;
+                e.Handled = true;
+                vm.UnloadMedia();
+                this.Focus();
+                return;
+            }
 
-                // フォルダ内移動
-                case Key.PageUp:
-                case Key.PageDown:
+            // Ctrl+Up/Down: ソースツリーのフォルダ移動
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                if (e.Key == Key.Up)
+                {
                     e.Handled = true;
-                    await vm.MoveNextMediaAsync(e.Key == Key.PageDown);
-                    this.Focus();
+                    vm.SourceFolderTree.SelectPrevFolder();
                     return;
+                }
+                if (e.Key == Key.Down)
+                {
+                    e.Handled = true;
+                    vm.SourceFolderTree.SelectNextFolder();
+                    return;
+                }
+            }
 
-                // 書庫内移動（左キー=次ページ、右キー=前ページ）
-                case Key.Left:
-                case Key.Right:
-                    if (vm.CurrentMedia is IPageNavigable navigable)
-                    {
-                        e.Handled = true;
-                        if (e.Key == Key.Left) navigable.NextPage();
-                        else navigable.PrevPage();
-                        this.Focus();
-                    }
-                    break;
+            // Up/Down/PageUp/PageDown: フォルダ内ファイル送り
+            if (e.Key == Key.Up || e.Key == Key.PageUp)
+            {
+                e.Handled = true;
+                await vm.MoveNextMediaAsync(false);
+                this.Focus();
+                return;
+            }
+            if (e.Key == Key.Down || e.Key == Key.PageDown)
+            {
+                e.Handled = true;
+                await vm.MoveNextMediaAsync(true);
+                this.Focus();
+                return;
+            }
+
+            // Left/Right: 書庫/PDF内ページ送り
+            if (e.Key == Key.Left || e.Key == Key.Right)
+            {
+                if (vm.CurrentMedia is IPageNavigable navigable)
+                {
+                    e.Handled = true;
+                    if (e.Key == Key.Left) navigable.NextPage();
+                    else navigable.PrevPage();
+                    this.Focus();
+                }
             }
         }
 
