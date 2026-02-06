@@ -129,3 +129,7 @@ MediaFactory.Register(".mp4", path => new VideoContent(path));
 
   本リポジトリのソースコードはポートフォリオとして公開しています。
   無断転載、商用利用、再配布、およびこれらに類する行為を禁止します。
+  詳細は [LICENSE](LICENSE) ファイルを参照してください。
+
+  使用しているサードパーティライブラリのライセンスについては
+  [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) を参照してください。
