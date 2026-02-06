@@ -27,7 +27,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-        <Grid Grid.Column="0" Background="#F3F3F3">
+        <Grid x:Name="SidePane" Grid.Column="0" Background="#F3F3F3">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="5"/>

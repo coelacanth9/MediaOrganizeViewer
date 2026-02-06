@@ -187,6 +187,10 @@ namespace MediaOrganizeViewer
         {
             base.OnPreviewMouseWheel(e);
 
+            // サイドペイン上ではツリー・リストのスクロールを優先
+            if (SidePane.IsMouseOver)
+                return;
+
             var vm = DataContext as MainViewModel;
             if (vm?.CurrentMedia is IPageNavigable navigable)
             {
