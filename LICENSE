@@ -1,8 +1,25 @@
+Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)
+
 Copyright (c) 2026 coelacanth9
 
-本リポジトリのソースコードはポートフォリオとして公開しています。
-無断転載、商用利用、再配布、およびこれらに類する行為を禁止します。
+You are free to:
+  - Share: copy and redistribute the material in any medium or format
+  - Adapt: remix, transform, and build upon the material
 
-This source code is published as a portfolio.
-Unauthorized reproduction, commercial use, redistribution, and similar
-activities are prohibited.
+Under the following terms:
+  - Attribution: You must give appropriate credit, provide a link to the
+    license, and indicate if changes were made.
+  - NonCommercial: You may not use the material for commercial purposes.
+
+No additional restrictions: You may not apply legal terms or technological
+measures that legally restrict others from doing anything the license permits.
+
+Full license text: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+
+---
+
+本リポジトリのソースコードは CC BY-NC 4.0 ライセンスの下で公開しています。
+学習・参考・改変は自由ですが、商用利用は禁止です。
+クレジット表記（著作者名とライセンスへのリンク）をお願いします。
+
+サードパーティライブラリのライセンスについては THIRD_PARTY_NOTICES.md を参照してください。
