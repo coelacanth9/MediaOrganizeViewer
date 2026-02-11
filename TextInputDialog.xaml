@@ -16,9 +16,24 @@
 
         <TextBlock Grid.Row="0" Text="{Binding PromptMessage}" Margin="0,0,0,10"/>
 
-        <TextBox x:Name="InputTextBox" Grid.Row="1" 
-                 Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
-                 FontSize="14" Padding="5" Margin="0,0,0,20"/>
+        <Grid Grid.Row="1" Margin="0,0,0,20">
+            <TextBox x:Name="InputTextBox"
+                     Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
+                     FontSize="14" Padding="5"/>
+            <TextBlock Text="{Binding PlaceholderText}" FontSize="14" Padding="6"
+                       Foreground="Gray" IsHitTestVisible="False">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding InputText}" Value="">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </Grid>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="OK" Width="80" Height="30" Margin="0,0,10,0" 

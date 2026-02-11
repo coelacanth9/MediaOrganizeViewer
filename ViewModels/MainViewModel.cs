@@ -338,8 +338,7 @@ namespace MediaOrganizeViewer.ViewModels
 
                 if (System.IO.File.Exists(destinationPath))
                 {
-                    updateStatus("移動先に同名ファイルが存在します");
-                    return null;
+                    destinationPath = GetUniqueFilePath(destinationPath);
                 }
 
                 var sourceFolder = System.IO.Path.GetDirectoryName(currentFilePath);
@@ -438,8 +437,7 @@ namespace MediaOrganizeViewer.ViewModels
 
                     if (System.IO.File.Exists(destPath))
                     {
-                        skippedCount++;
-                        continue;
+                        destPath = GetUniqueFilePath(destPath);
                     }
 
                     await Task.Run(() => System.IO.File.Move(item.Path, destPath));
@@ -585,6 +583,25 @@ namespace MediaOrganizeViewer.ViewModels
                 updateStatus($"元に戻す際にエラー: {ex.Message}");
                 return false;
             }
+        }
+        /// <summary>
+        /// 同名ファイルが存在する場合に連番付きのユニークなパスを返す（例: file(1).ext）
+        /// </summary>
+        private static string GetUniqueFilePath(string path)
+        {
+            var dir = System.IO.Path.GetDirectoryName(path)!;
+            var nameWithoutExt = System.IO.Path.GetFileNameWithoutExtension(path);
+            var ext = System.IO.Path.GetExtension(path);
+
+            int counter = 1;
+            string newPath;
+            do
+            {
+                newPath = System.IO.Path.Combine(dir, $"{nameWithoutExt}({counter}){ext}");
+                counter++;
+            } while (System.IO.File.Exists(newPath));
+
+            return newPath;
         }
     }
 }

@@ -11,14 +11,16 @@ namespace MediaOrganizeViewer
         private string _dialogTitle = string.Empty;
         private string _promptMessage = string.Empty;
         private string _inputText = string.Empty;
+        private string _placeholderText = string.Empty;
 
-        public TextInputDialog(string title, string promptMessage, string defaultText = "")
+        public TextInputDialog(string title, string promptMessage, string defaultText = "", string placeholder = "")
         {
             InitializeComponent();
             DataContext = this;
             DialogTitle = title;
             PromptMessage = promptMessage;
             InputText = defaultText;
+            PlaceholderText = placeholder;
             InputTextBox.Focus();
             InputTextBox.SelectAll();
         }
@@ -49,6 +51,16 @@ namespace MediaOrganizeViewer
             set
             {
                 _inputText = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string PlaceholderText
+        {
+            get => _placeholderText;
+            set
+            {
+                _placeholderText = value;
                 OnPropertyChanged();
             }
         }

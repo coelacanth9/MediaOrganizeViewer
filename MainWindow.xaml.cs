@@ -140,6 +140,17 @@ namespace MediaOrganizeViewer
                     vm.SourceFolderTree.CollapseSelectedFolder();
                     return;
                 }
+                if (e.Key == Key.C)
+                {
+                    e.Handled = true;
+                    if (vm.CurrentMedia != null)
+                    {
+                        var fileName = System.IO.Path.GetFileName(vm.CurrentMedia.Path);
+                        Clipboard.SetText(fileName);
+                        SetStatusText($"ファイル名をコピーしました: {fileName}");
+                    }
+                    return;
+                }
                 if (e.Key == Key.Z)
                 {
                     e.Handled = true;
@@ -304,6 +315,15 @@ namespace MediaOrganizeViewer
             this.Focus();
         }
 
+        private void TreeViewItem_Selected(object sender, RoutedEventArgs e)
+        {
+            if (sender is TreeViewItem tvi && !e.Handled)
+            {
+                tvi.BringIntoView();
+                e.Handled = true;
+            }
+        }
+
         private void RestoreWindowFocus()
         {
             Dispatcher.BeginInvoke(new Action(() =>
@@ -327,7 +347,7 @@ namespace MediaOrganizeViewer
             }
 
             // ダイアログで新規フォルダ名を入力
-            var dialog = new TextInputDialog("新規フォルダ作成", "フォルダ名を入力してください:", "新しいフォルダ");
+            var dialog = new TextInputDialog("新規フォルダ作成", "フォルダ名を入力してください:", placeholder: "新しいフォルダ");
             if (dialog.ShowDialog() == true)
             {
                 var folderName = dialog.InputText.Trim();
@@ -351,6 +371,9 @@ namespace MediaOrganizeViewer
 
                     // ツリーを更新
                     vm.DestinationFolderTree.RefreshFolder(selectedItem.Path);
+
+                    // 作成したフォルダをツリー上で選択
+                    vm.DestinationFolderTree.SelectFolder(newFolderPath);
                 }
                 catch (Exception ex)
                 {

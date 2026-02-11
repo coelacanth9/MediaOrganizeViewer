@@ -171,6 +171,26 @@ namespace MediaOrganizeViewer.ViewModels
         }
 
         /// <summary>
+        /// 指定パスのフォルダを選択状態にする
+        /// </summary>
+        public void SelectFolder(string path)
+        {
+            // 現在の選択を解除
+            var current = EnumerateVisible(Items).FirstOrDefault(i => i.IsSelected);
+            if (current != null)
+            {
+                current.IsSelected = false;
+            }
+
+            // 対象を選択
+            var target = FindItemByPath(Items, path);
+            if (target != null)
+            {
+                target.IsSelected = true;
+            }
+        }
+
+        /// <summary>
         /// 指定されたパスの親アイテムを再読み込み（新規フォルダ作成後などに使用）
         /// </summary>
         public void RefreshFolder(string parentPath)
