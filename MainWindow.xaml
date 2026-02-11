@@ -146,7 +146,7 @@
 
         <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="#CCC"/>
 
-        <Border Grid.Column="2">
+        <Border Grid.Column="2" ContextMenuOpening="MediaArea_ContextMenuOpening">
             <Border.Style>
                 <Style TargetType="Border">
                     <Setter Property="Background" Value="Black"/>
@@ -157,6 +157,12 @@
                     </Style.Triggers>
                 </Style>
             </Border.Style>
+            <Border.ContextMenu>
+                <ContextMenu>
+                    <MenuItem x:Name="MenuSinglePage" Header="1ページ表示" Click="DisplayModeSingle_Click"/>
+                    <MenuItem x:Name="MenuSpreadPage" Header="2ページ表示（見開き）" Click="DisplayModeSpread_Click"/>
+                </ContextMenu>
+            </Border.ContextMenu>
             <Grid>
                 <core:MediaViewHost CurrentMedia="{Binding CurrentMedia}" />
                 <ProgressBar VerticalAlignment="Bottom" Height="4" IsIndeterminate="True"

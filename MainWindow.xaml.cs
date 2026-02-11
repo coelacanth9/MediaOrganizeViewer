@@ -488,6 +488,45 @@ namespace MediaOrganizeViewer
             this.Focus();
         }
 
+        // --- 描画領域コンテキストメニュー ---
+
+        private void MediaArea_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            var vm = DataContext as MainViewModel;
+            if (vm?.CurrentMedia is ArchiveContent archive)
+            {
+                MenuSinglePage.IsChecked = archive.DisplayMode == ImageDisplayMode.Single;
+                MenuSpreadPage.IsChecked = archive.DisplayMode == ImageDisplayMode.Spread;
+            }
+            else if (vm?.CurrentMedia is PdfContent pdf)
+            {
+                MenuSinglePage.IsChecked = pdf.DisplayMode == ImageDisplayMode.Single;
+                MenuSpreadPage.IsChecked = pdf.DisplayMode == ImageDisplayMode.Spread;
+            }
+            else
+            {
+                e.Handled = true; // Archive/PDF以外ではメニューを表示しない
+            }
+        }
+
+        private void DisplayModeSingle_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as MainViewModel;
+            if (vm?.CurrentMedia is ArchiveContent archive)
+                archive.DisplayMode = ImageDisplayMode.Single;
+            else if (vm?.CurrentMedia is PdfContent pdf)
+                pdf.DisplayMode = ImageDisplayMode.Single;
+        }
+
+        private void DisplayModeSpread_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as MainViewModel;
+            if (vm?.CurrentMedia is ArchiveContent archive)
+                archive.DisplayMode = ImageDisplayMode.Spread;
+            else if (vm?.CurrentMedia is PdfContent pdf)
+                pdf.DisplayMode = ImageDisplayMode.Spread;
+        }
+
         private void UnloadMedia_Click(object sender, RoutedEventArgs e)
         {
             var vm = DataContext as MainViewModel;

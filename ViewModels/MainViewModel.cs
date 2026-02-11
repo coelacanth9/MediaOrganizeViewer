@@ -19,6 +19,7 @@ namespace MediaOrganizeViewer.ViewModels
     {
         private readonly ISettingsService _settingsService;
         private readonly Stack<MoveRecord> _moveHistory = new();
+        private ImageDisplayMode _preferredDisplayMode = ImageDisplayMode.Spread;
 
         // SettingsServiceを外部から参照できるように公開
         public ISettingsService SettingsService => _settingsService;
@@ -153,6 +154,10 @@ namespace MediaOrganizeViewer.ViewModels
             {
                 await LoadMediaAsync(firstFile);
             }
+            else
+            {
+                UnloadMedia();
+            }
         }
 
 
@@ -160,11 +165,24 @@ namespace MediaOrganizeViewer.ViewModels
         {
             if (CurrentMedia != null)
             {
+                // 前のメディアの表示モードを保存
+                if (CurrentMedia is ArchiveContent oldArchive)
+                    _preferredDisplayMode = oldArchive.DisplayMode;
+                else if (CurrentMedia is PdfContent oldPdf)
+                    _preferredDisplayMode = oldPdf.DisplayMode;
+
                 CurrentMedia.PropertyChanged -= OnCurrentMediaPropertyChanged;
                 CurrentMedia.Dispose();
             }
 
             CurrentMedia = MediaFactory.Create(path);
+
+            // 保存した表示モードを適用
+            if (CurrentMedia is ArchiveContent newArchive)
+                newArchive.DisplayMode = _preferredDisplayMode;
+            else if (CurrentMedia is PdfContent newPdf)
+                newPdf.DisplayMode = _preferredDisplayMode;
+
             CurrentMedia.PropertyChanged += OnCurrentMediaPropertyChanged;
             await CurrentMedia.LoadAsync();
 
