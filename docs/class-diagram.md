@@ -31,9 +31,6 @@ graph TB
     MVM --> FI
     FTVM --> FTI
     SS --> FD
-
-    style MediaOrganizeViewer fill:#e8f4fd,stroke:#2196f3
-    style MediaViewer.Core fill:#fff3e0,stroke:#ff9800
 ```
 
 ## MediaOrganizeViewer — クラス図
@@ -373,10 +370,6 @@ graph LR
     MVM2 -->|"MediaFactory.Create(path)"| MF2
     MF2 -->|"適切なMediaContent生成"| MC2
     MC2 -->|"DataTemplate切替"| Views
-
-    style MainApp fill:#e8f4fd,stroke:#2196f3
-    style Core fill:#fff3e0,stroke:#ff9800
-    style 外部ライブラリ fill:#f3e5f5,stroke:#9c27b0
 ```
 
 ## 主要データフロー
