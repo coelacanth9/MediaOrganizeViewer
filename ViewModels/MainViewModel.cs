@@ -45,8 +45,8 @@ namespace MediaOrganizeViewer.ViewModels
         {
             _settingsService = settingsService;
             _settingsService.Load();
-            SourceFolderTree = new FolderTreeViewModel(_settingsService.SourceRootPath, true, _settingsService);
-            DestinationFolderTree = new FolderTreeViewModel(_settingsService.DestinationRootPath, false, _settingsService);
+            SourceFolderTree = new FolderTreeViewModel(_settingsService.SourceRootPaths, true, _settingsService);
+            DestinationFolderTree = new FolderTreeViewModel(_settingsService.DestinationRootPaths, false, _settingsService);
 
             // FolderTreeViewModelのSelectedPath変更を直接監視
             SourceFolderTree.PropertyChanged += async (s, e) =>
@@ -55,20 +55,19 @@ namespace MediaOrganizeViewer.ViewModels
                 {
                     await OnSourceFolderSelectedAsync(SourceFolderTree.SelectedPath);
                 }
-                else if (e.PropertyName == nameof(FolderTreeViewModel.RootPath))
-                {
-                    _settingsService.SourceRootPath = SourceFolderTree.RootPath ?? string.Empty;
-                    _settingsService.Save();
-                }
             };
 
-            DestinationFolderTree.PropertyChanged += (s, e) =>
+            // ルート変更時に設定を保存
+            SourceFolderTree.RootsChanged += () =>
             {
-                if (e.PropertyName == nameof(FolderTreeViewModel.RootPath))
-                {
-                    _settingsService.DestinationRootPath = DestinationFolderTree.RootPath ?? string.Empty;
-                    _settingsService.Save();
-                }
+                _settingsService.SourceRootPaths = SourceFolderTree.GetRootPaths();
+                _settingsService.Save();
+            };
+
+            DestinationFolderTree.RootsChanged += () =>
+            {
+                _settingsService.DestinationRootPaths = DestinationFolderTree.GetRootPaths();
+                _settingsService.Save();
             };
 
             // 最終閲覧位置を復元

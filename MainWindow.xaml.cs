@@ -286,33 +286,17 @@ namespace MediaOrganizeViewer
 
         private void FolderTreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            var selectedItem = e.NewValue as FolderTreeItem;
-            if (selectedItem == null) return;
-
-            var mainVm = this.DataContext as MainViewModel;
-            if (mainVm == null) return;
-
-            // ルートアイテムがクリックされた場合のみ、ルート変更ダイアログを表示
-            if (selectedItem.IsRoot)
-            {
-                FolderTreeViewModel? targetTreeVm = null;
-
-                if (mainVm.DestinationFolderTree.Items.Contains(selectedItem))
-                {
-                    targetTreeVm = mainVm.DestinationFolderTree;
-                }
-                else if (mainVm.SourceFolderTree.Items.Contains(selectedItem))
-                {
-                    targetTreeVm = mainVm.SourceFolderTree;
-                }
-
-                if (targetTreeVm != null)
-                {
-                    targetTreeVm.ChangeRootDirectory();
-                }
-            }
-
             this.Focus();
+        }
+
+        private void SourceTreeViewItem_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            var tvi = sender as TreeViewItem;
+            var item = tvi?.DataContext as FolderTreeItem;
+            if (item == null || !item.IsRoot)
+            {
+                e.Handled = true;
+            }
         }
 
         private void TreeViewItem_Selected(object sender, RoutedEventArgs e)
@@ -333,20 +317,45 @@ namespace MediaOrganizeViewer
             }), DispatcherPriority.Input);
         }
 
+        // --- ルート用コンテキストメニューハンドラ ---
+
+        private void ChangeRootPath_Click(object sender, RoutedEventArgs e)
+        {
+            var (item, treeVm) = GetContextMenuTarget(sender);
+            if (item == null || treeVm == null) return;
+            treeVm.ChangeRootPath(item);
+            this.Focus();
+        }
+
+        private void AddRoot_Click(object sender, RoutedEventArgs e)
+        {
+            var (_, treeVm) = GetContextMenuTarget(sender);
+            if (treeVm == null) return;
+            treeVm.AddRootViaDialog();
+            this.Focus();
+        }
+
+        private void RemoveRoot_Click(object sender, RoutedEventArgs e)
+        {
+            var (item, treeVm) = GetContextMenuTarget(sender);
+            if (item == null || treeVm == null) return;
+            // ダミーアイテム（パス未設定）の場合は何もしない
+            if (string.IsNullOrEmpty(item.Path)) return;
+            treeVm.RemoveRoot(item);
+            this.Focus();
+        }
+
+        // --- フォルダ操作コンテキストメニューハンドラ ---
+
         private void CreateFolder_Click(object sender, RoutedEventArgs e)
         {
-            var vm = DataContext as MainViewModel;
-            if (vm == null) return;
-
-            // 選択されているフォルダアイテムを取得
-            var selectedItem = FindSelectedItem(vm.DestinationFolderTree.Items);
-            if (selectedItem == null || string.IsNullOrEmpty(selectedItem.Path))
+            var (selectedItem, treeVm) = GetContextMenuTarget(sender);
+            if (selectedItem == null || string.IsNullOrEmpty(selectedItem.Path) || treeVm == null)
             {
                 SetStatusText("フォルダを選択してください");
                 return;
             }
 
-            // ダイアログで新規フォルダ名を入力
             var dialog = new TextInputDialog("新規フォルダ作成", "フォルダ名を入力してください:", placeholder: "新しいフォルダ");
             if (dialog.ShowDialog() == true)
             {
@@ -369,11 +378,8 @@ namespace MediaOrganizeViewer
                     System.IO.Directory.CreateDirectory(newFolderPath);
                     SetStatusText($"フォルダ '{folderName}' を作成しました");
 
-                    // ツリーを更新
-                    vm.DestinationFolderTree.RefreshFolder(selectedItem.Path);
-
-                    // 作成したフォルダをツリー上で選択
-                    vm.DestinationFolderTree.SelectFolder(newFolderPath);
+                    treeVm.RefreshFolder(selectedItem.Path);
+                    treeVm.SelectFolder(newFolderPath);
                 }
                 catch (Exception ex)
                 {
@@ -392,65 +398,69 @@ namespace MediaOrganizeViewer
             var shortcutKey = menuItem.Tag as string;
             if (string.IsNullOrEmpty(shortcutKey)) return;
 
+            var (selectedItem, _) = GetContextMenuTarget(sender);
+            if (selectedItem == null || string.IsNullOrEmpty(selectedItem.Path)) return;
+
             var vm = DataContext as MainViewModel;
             if (vm == null) return;
 
-            // コンテキストメニューが開かれたTreeViewを特定
-            var contextMenu = menuItem.Parent as ContextMenu;
-            var treeView = contextMenu?.PlacementTarget as TreeView;
-            if (treeView == null) return;
-
-            // 選択されているフォルダアイテムを取得
-            FolderTreeItem? selectedItem = null;
-            if (treeView == DestinationFolderTreeView)
-            {
-                selectedItem = FindSelectedItem(vm.DestinationFolderTree.Items);
-            }
-
-            if (selectedItem == null || string.IsNullOrEmpty(selectedItem.Path)) return;
-
-            // ショートカット割り当て
             vm.SettingsService.AssignFolderShortcut(selectedItem.Path, shortcutKey);
             vm.SettingsService.Save();
 
-            // 表示名を更新
             selectedItem.AssignedShortcut = shortcutKey;
-
-            // ステータスバーに通知
             SetStatusText($"フォルダ '{selectedItem.Name}' に Alt+{shortcutKey} を割り当てました");
         }
 
         private void RemoveShortcut_Click(object sender, RoutedEventArgs e)
         {
-            var menuItem = sender as MenuItem;
-            if (menuItem == null) return;
+            var (selectedItem, _) = GetContextMenuTarget(sender);
+            if (selectedItem == null || string.IsNullOrEmpty(selectedItem.Path)) return;
 
             var vm = DataContext as MainViewModel;
             if (vm == null) return;
 
-            // コンテキストメニューが開かれたTreeViewを特定
-            var contextMenu = menuItem.Parent as ContextMenu;
-            var treeView = contextMenu?.PlacementTarget as TreeView;
-            if (treeView == null) return;
-
-            // 選択されているフォルダアイテムを取得
-            FolderTreeItem? selectedItem = null;
-            if (treeView == DestinationFolderTreeView)
-            {
-                selectedItem = FindSelectedItem(vm.DestinationFolderTree.Items);
-            }
-
-            if (selectedItem == null || string.IsNullOrEmpty(selectedItem.Path)) return;
-
-            // ショートカット解除
             vm.SettingsService.RemoveFolderShortcut(selectedItem.Path);
             vm.SettingsService.Save();
 
-            // 表示名を更新
             selectedItem.AssignedShortcut = string.Empty;
-
-            // ステータスバーに通知
             SetStatusText($"フォルダ '{selectedItem.Name}' のショートカットを解除しました");
+        }
+
+        /// <summary>
+        /// コンテキストメニューから対象の FolderTreeItem と FolderTreeViewModel を取得
+        /// </summary>
+        private (FolderTreeItem? item, FolderTreeViewModel? treeVm) GetContextMenuTarget(object sender)
+        {
+            var menuItem = sender as MenuItem;
+            // MenuItem → ContextMenu → PlacementTarget(TreeViewItem) → DataContext(FolderTreeItem)
+            ContextMenu? contextMenu = null;
+            DependencyObject? current = menuItem;
+            while (current != null)
+            {
+                if (current is ContextMenu cm) { contextMenu = cm; break; }
+                current = LogicalTreeHelper.GetParent(current);
+            }
+
+            var treeViewItem = contextMenu?.PlacementTarget as TreeViewItem;
+            var folderItem = treeViewItem?.DataContext as FolderTreeItem;
+
+            var vm = DataContext as MainViewModel;
+            if (vm == null || treeViewItem == null) return (folderItem, null);
+
+            // TreeViewItem から親の TreeView を探す
+            DependencyObject? parent = treeViewItem;
+            while (parent != null)
+            {
+                if (parent is TreeView tv)
+                {
+                    if (tv == DestinationFolderTreeView) return (folderItem, vm.DestinationFolderTree);
+                    if (tv == SourceFolderTreeView) return (folderItem, vm.SourceFolderTree);
+                    break;
+                }
+                parent = VisualTreeHelper.GetParent(parent);
+            }
+
+            return (folderItem, null);
         }
 
         private FolderTreeItem? FindSelectedItem(System.Collections.ObjectModel.ObservableCollection<FolderTreeItem> items)

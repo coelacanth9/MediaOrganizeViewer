@@ -12,6 +12,39 @@
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+        <!-- Source ルート用コンテキストメニュー -->
+        <ContextMenu x:Key="SourceRootContextMenu" x:Shared="False">
+            <MenuItem Header="パスを変更する" Click="ChangeRootPath_Click"/>
+            <MenuItem Header="別のルートを追加する" Click="AddRoot_Click"/>
+            <MenuItem Header="このルートを除外する" Click="RemoveRoot_Click"/>
+        </ContextMenu>
+
+        <!-- Destination ルート用コンテキストメニュー -->
+        <ContextMenu x:Key="DestRootContextMenu" x:Shared="False">
+            <MenuItem Header="パスを変更する" Click="ChangeRootPath_Click"/>
+            <MenuItem Header="別のルートを追加する" Click="AddRoot_Click"/>
+            <MenuItem Header="このルートを除外する" Click="RemoveRoot_Click"/>
+            <Separator/>
+            <MenuItem Header="新規フォルダ作成" Click="CreateFolder_Click"/>
+        </ContextMenu>
+
+        <!-- Destination 非ルート用コンテキストメニュー -->
+        <ContextMenu x:Key="DestNonRootContextMenu" x:Shared="False">
+            <MenuItem Header="新規フォルダ作成" Click="CreateFolder_Click"/>
+            <Separator/>
+            <MenuItem Header="Alt+1に割り当て" Click="AssignShortcut_Click" Tag="1"/>
+            <MenuItem Header="Alt+2に割り当て" Click="AssignShortcut_Click" Tag="2"/>
+            <MenuItem Header="Alt+3に割り当て" Click="AssignShortcut_Click" Tag="3"/>
+            <MenuItem Header="Alt+4に割り当て" Click="AssignShortcut_Click" Tag="4"/>
+            <MenuItem Header="Alt+5に割り当て" Click="AssignShortcut_Click" Tag="5"/>
+            <MenuItem Header="Alt+6に割り当て" Click="AssignShortcut_Click" Tag="6"/>
+            <MenuItem Header="Alt+7に割り当て" Click="AssignShortcut_Click" Tag="7"/>
+            <MenuItem Header="Alt+8に割り当て" Click="AssignShortcut_Click" Tag="8"/>
+            <MenuItem Header="Alt+9に割り当て" Click="AssignShortcut_Click" Tag="9"/>
+            <Separator/>
+            <MenuItem Header="ショートカット解除" Click="RemoveShortcut_Click"/>
+        </ContextMenu>
     </Window.Resources>
     
     <Grid>
@@ -44,7 +77,13 @@
                         <Style TargetType="TreeViewItem">
                             <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
                             <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                            <Setter Property="ContextMenu" Value="{StaticResource DestNonRootContextMenu}"/>
                             <EventSetter Event="Selected" Handler="TreeViewItem_Selected"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsRoot}" Value="True">
+                                    <Setter Property="ContextMenu" Value="{StaticResource DestRootContextMenu}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
                         </Style>
                     </TreeView.ItemContainerStyle>
                     <TreeView.ItemTemplate>
@@ -52,23 +91,6 @@
                             <TextBlock Text="{Binding DisplayName}"/>
                         </HierarchicalDataTemplate>
                     </TreeView.ItemTemplate>
-                    <TreeView.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Header="新規フォルダ作成" Click="CreateFolder_Click"/>
-                            <Separator/>
-                            <MenuItem Header="Alt+1に割り当て" Click="AssignShortcut_Click" Tag="1"/>
-                            <MenuItem Header="Alt+2に割り当て" Click="AssignShortcut_Click" Tag="2"/>
-                            <MenuItem Header="Alt+3に割り当て" Click="AssignShortcut_Click" Tag="3"/>
-                            <MenuItem Header="Alt+4に割り当て" Click="AssignShortcut_Click" Tag="4"/>
-                            <MenuItem Header="Alt+5に割り当て" Click="AssignShortcut_Click" Tag="5"/>
-                            <MenuItem Header="Alt+6に割り当て" Click="AssignShortcut_Click" Tag="6"/>
-                            <MenuItem Header="Alt+7に割り当て" Click="AssignShortcut_Click" Tag="7"/>
-                            <MenuItem Header="Alt+8に割り当て" Click="AssignShortcut_Click" Tag="8"/>
-                            <MenuItem Header="Alt+9に割り当て" Click="AssignShortcut_Click" Tag="9"/>
-                            <Separator/>
-                            <MenuItem Header="ショートカット解除" Click="RemoveShortcut_Click"/>
-                        </ContextMenu>
-                    </TreeView.ContextMenu>
                 </TreeView>
             </GroupBox>
 
@@ -82,6 +104,12 @@
                             <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
                             <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
                             <EventSetter Event="Selected" Handler="TreeViewItem_Selected"/>
+                            <EventSetter Event="ContextMenuOpening" Handler="SourceTreeViewItem_ContextMenuOpening"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsRoot}" Value="True">
+                                    <Setter Property="ContextMenu" Value="{StaticResource SourceRootContextMenu}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
                         </Style>
                     </TreeView.ItemContainerStyle>
                     <TreeView.ItemTemplate>

@@ -10,14 +10,14 @@ namespace MediaOrganizeViewer
     public interface ISettingsService
     {
         /// <summary>
-        /// 移動元（下段ツリー）のルートパス
+        /// 移動元（下段ツリー）のルートパスリスト
         /// </summary>
-        string SourceRootPath { get; set; }
+        List<string> SourceRootPaths { get; set; }
 
         /// <summary>
-        /// 移動先（上段ツリー）のルートパス
+        /// 移動先（上段ツリー）のルートパスリスト
         /// </summary>
-        string DestinationRootPath { get; set; }
+        List<string> DestinationRootPaths { get; set; }
 
         /// <summary>
         /// 前回閲覧していたファイルパス

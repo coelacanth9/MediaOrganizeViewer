@@ -17,8 +17,8 @@ namespace MediaOrganizeViewer
         public event EventHandler<SettingChangedEventArgs>? SettingChanged;
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        private string _sourceRootPath = string.Empty;
-        private string _destinationRootPath = string.Empty;
+        private List<string> _sourceRootPaths = new List<string>();
+        private List<string> _destinationRootPaths = new List<string>();
         private string _lastViewedFilePath = string.Empty;
 
         // 「ショトカのやつ」であることが明確な名前に変更
@@ -30,16 +30,16 @@ namespace MediaOrganizeViewer
             Load();
         }
 
-        public string SourceRootPath
+        public List<string> SourceRootPaths
         {
-            get => _sourceRootPath;
-            set => SetProperty(ref _sourceRootPath, value);
+            get => _sourceRootPaths;
+            set => SetProperty(ref _sourceRootPaths, value);
         }
 
-        public string DestinationRootPath
+        public List<string> DestinationRootPaths
         {
-            get => _destinationRootPath;
-            set => SetProperty(ref _destinationRootPath, value);
+            get => _destinationRootPaths;
+            set => SetProperty(ref _destinationRootPaths, value);
         }
 
         public string LastViewedFilePath
@@ -65,8 +65,8 @@ namespace MediaOrganizeViewer
 
         public void Load()
         {
-            SourceRootPath = Settings.Default.SourceRootPath;
-            DestinationRootPath = Settings.Default.DestinationRootPath;
+            SourceRootPaths = ParsePathList(Settings.Default.SourceRootPath);
+            DestinationRootPaths = ParsePathList(Settings.Default.DestinationRootPath);
             LastViewedFilePath = Settings.Default.LastViewedFilePath;
             SkipIntervalSeconds = Settings.Default.SkipIntervalSeconds;
 
@@ -90,10 +90,32 @@ namespace MediaOrganizeViewer
             }
         }
 
+        /// <summary>
+        /// JSON配列文字列をパースし、旧形式（単一パス）からの自動マイグレーションも行う
+        /// </summary>
+        private static List<string> ParsePathList(string raw)
+        {
+            if (string.IsNullOrEmpty(raw)) return new List<string>();
+
+            // JSON配列としてパースを試みる
+            if (raw.TrimStart().StartsWith("["))
+            {
+                try
+                {
+                    var list = JsonSerializer.Deserialize<List<string>>(raw);
+                    if (list != null) return list;
+                }
+                catch (JsonException) { }
+            }
+
+            // 旧形式（単一パス文字列）として1要素リストに変換
+            return new List<string> { raw };
+        }
+
         public void Save()
         {
-            Settings.Default.SourceRootPath = SourceRootPath;
-            Settings.Default.DestinationRootPath = DestinationRootPath;
+            Settings.Default.SourceRootPath = JsonSerializer.Serialize(SourceRootPaths);
+            Settings.Default.DestinationRootPath = JsonSerializer.Serialize(DestinationRootPaths);
             Settings.Default.LastViewedFilePath = LastViewedFilePath;
             Settings.Default.SkipIntervalSeconds = SkipIntervalSeconds;
 

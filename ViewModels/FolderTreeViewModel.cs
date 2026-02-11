@@ -23,71 +23,158 @@ namespace MediaOrganizeViewer.ViewModels
         [ObservableProperty]
         private string? _selectedPath;
 
-        // ルートパス（設定保存用）
-        [ObservableProperty]
-        private string? _rootPath;
+        /// <summary>
+        /// ルート追加/変更/削除時に発火するイベント
+        /// </summary>
+        public event Action? RootsChanged;
 
-        public FolderTreeViewModel(string rootPath, bool isSource, ISettingsService? settingsService = null)
+        public FolderTreeViewModel(List<string> rootPaths, bool isSource, ISettingsService? settingsService = null)
         {
             _isSource = isSource;
             _settingsService = settingsService;
-            _rootPath = rootPath;
-            SetRoot(rootPath);
+            SetRoots(rootPaths);
         }
 
         /// <summary>
-        /// ルートフォルダを設定し、最初の階層を読み込む
+        /// 複数ルートを設定し、各ルートの最初の階層を読み込む
         /// </summary>
-        public void SetRoot(string path)
+        public void SetRoots(List<string> paths)
         {
-            // コレクションを空にする（ZipImageViewer の RootItems.Clear() 相当）
             Items.Clear();
 
-            if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
-            {
-                // パスが実在する場合の処理
-                var root = CreateItem(path);
-                root.Name = Path.GetFileName(path);
-                if (string.IsNullOrEmpty(root.Name)) root.Name = path;
+            var validPaths = paths.Where(p => !string.IsNullOrEmpty(p) && Directory.Exists(p)).ToList();
 
-                root.IsRoot = true;
-                root.IsExpanded = true;
-                Items.Add(root);
+            if (validPaths.Count > 0)
+            {
+                foreach (var path in validPaths)
+                {
+                    var root = CreateItem(path);
+                    root.Name = Path.GetFileName(path);
+                    if (string.IsNullOrEmpty(root.Name)) root.Name = path;
+                    root.IsRoot = true;
+                    root.IsExpanded = true;
+                    Items.Add(root);
+                }
             }
             else
             {
-                // ★ここが ZipImageViewer の else 節の完全な再現です
-                // 実在しない場合、"クリックして設定" 用のダミーアイテムを生成して必ず Add する
-                var selectRootItem = new FolderTreeItem(string.Empty)
-                {
-                    Name = _isSource ? "ここをクリックして移動元を設定" : "ここをクリックして移動先を設定",
-                    IsRoot = true,
-                    IsExpanded = true
-                };
-
-                // これを Add しないと、TreeView は「空（冴えない状態）」になります
-                Items.Add(selectRootItem);
+                Items.Add(CreateDummyRoot());
             }
         }
 
-        [RelayCommand]
-        public void ChangeRootDirectory()
+        /// <summary>
+        /// ダイアログで新規ルートを追加
+        /// </summary>
+        public void AddRootViaDialog()
         {
             var dialog = new Microsoft.Win32.OpenFolderDialog
             {
-                InitialDirectory = Items.FirstOrDefault()?.Path,
-                Title = _isSource ? "Sourceルートを選択" : "Destinationルートを選択"
+                Title = _isSource ? "追加するSourceルートを選択" : "追加するDestinationルートを選択"
             };
 
             if (dialog.ShowDialog() == true)
             {
-                // パスが今のルートと違う場合だけ更新する
-                if (Items.FirstOrDefault()?.Path != dialog.FolderName)
-                {
-                    SetRoot(dialog.FolderName);
-                    RootPath = dialog.FolderName;
-                }
+                AddRoot(dialog.FolderName);
             }
+        }
+
+        /// <summary>
+        /// ルートアイテムを追加（重複チェック付き）
+        /// </summary>
+        public void AddRoot(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !Directory.Exists(path)) return;
+            if (Items.Any(i => i.Path == path)) return;
+
+            // ダミーが表示中なら除去
+            if (Items.Count == 1 && string.IsNullOrEmpty(Items[0].Path))
+            {
+                Items.Clear();
+            }
+
+            var root = CreateItem(path);
+            root.Name = Path.GetFileName(path);
+            if (string.IsNullOrEmpty(root.Name)) root.Name = path;
+            root.IsRoot = true;
+            root.IsExpanded = true;
+            Items.Add(root);
+
+            RootsChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// 指定ルートを除外（最後の1つなら「右クリックして設定」ダミーに）
+        /// </summary>
+        public void RemoveRoot(FolderTreeItem root)
+        {
+            Items.Remove(root);
+
+            if (Items.Count == 0)
+            {
+                Items.Add(CreateDummyRoot());
+            }
+
+            RootsChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// ダイアログで特定ルートのパスを変更
+        /// </summary>
+        public void ChangeRootPath(FolderTreeItem root)
+        {
+            var dialog = new Microsoft.Win32.OpenFolderDialog
+            {
+                Title = _isSource ? "Sourceルートを選択" : "Destinationルートを選択"
+            };
+
+            if (!string.IsNullOrEmpty(root.Path))
+            {
+                dialog.InitialDirectory = root.Path;
+            }
+
+            if (dialog.ShowDialog() == true)
+            {
+                var newPath = dialog.FolderName;
+                if (root.Path == newPath) return;
+                if (Items.Any(i => i.Path == newPath)) return;
+
+                var index = Items.IndexOf(root);
+                if (index < 0) return;
+
+                Items.RemoveAt(index);
+
+                var newRoot = CreateItem(newPath);
+                newRoot.Name = Path.GetFileName(newPath);
+                if (string.IsNullOrEmpty(newRoot.Name)) newRoot.Name = newPath;
+                newRoot.IsRoot = true;
+                newRoot.IsExpanded = true;
+                Items.Insert(index, newRoot);
+
+                RootsChanged?.Invoke();
+            }
+        }
+
+        /// <summary>
+        /// 現在の全ルートパスをリストで返す（設定保存用）
+        /// </summary>
+        public List<string> GetRootPaths()
+        {
+            return Items.Where(i => !string.IsNullOrEmpty(i.Path))
+                        .Select(i => i.Path!)
+                        .ToList();
+        }
+
+        /// <summary>
+        /// 未設定時のダミーアイテムを生成
+        /// </summary>
+        private FolderTreeItem CreateDummyRoot()
+        {
+            return new FolderTreeItem(string.Empty)
+            {
+                Name = _isSource ? "右クリックして移動元を設定" : "右クリックして移動先を設定",
+                IsRoot = true,
+                IsExpanded = true
+            };
         }
 
         /// <summary>
