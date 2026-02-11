@@ -35,6 +35,16 @@ namespace MediaOrganizeViewer
         int SkipIntervalSeconds { get; set; }
 
         /// <summary>
+        /// Sourceツリーの展開・選択状態（JSON）
+        /// </summary>
+        string SourceTreeState { get; set; }
+
+        /// <summary>
+        /// Destinationツリーの展開・選択状態（JSON）
+        /// </summary>
+        string DestinationTreeState { get; set; }
+
+        /// <summary>
         /// 物理設定からデータを読み込む
         /// </summary>
         void Load();

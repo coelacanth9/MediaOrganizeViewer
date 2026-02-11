@@ -82,5 +82,29 @@ namespace MediaOrganizeViewer.Properties {
                 this["SkipIntervalSeconds"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string SourceTreeState {
+            get {
+                return ((string)(this["SourceTreeState"]));
+            }
+            set {
+                this["SourceTreeState"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string DestinationTreeState {
+            get {
+                return ((string)(this["DestinationTreeState"]));
+            }
+            set {
+                this["DestinationTreeState"] = value;
+            }
+        }
     }
 }

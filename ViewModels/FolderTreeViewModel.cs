@@ -9,6 +9,15 @@ using CommunityToolkit.Mvvm.Input;
 namespace MediaOrganizeViewer.ViewModels
 {
     /// <summary>
+    /// ツリーの展開・選択状態を保持するDTO
+    /// </summary>
+    public class TreeState
+    {
+        public List<string> ExpandedPaths { get; set; } = new();
+        public string? SelectedPath { get; set; }
+    }
+
+    /// <summary>
     /// フォルダツリーのロジックを担当するViewModel
     /// </summary>
     public partial class FolderTreeViewModel : ObservableObject
@@ -374,6 +383,51 @@ namespace MediaOrganizeViewer.ViewModels
                 if (found != null) return found;
             }
             return null;
+        }
+
+        /// <summary>
+        /// ツリーの展開・選択状態を取得
+        /// </summary>
+        public TreeState GetTreeState()
+        {
+            var state = new TreeState { SelectedPath = SelectedPath };
+            CollectExpandedPaths(Items, state.ExpandedPaths);
+            return state;
+        }
+
+        private void CollectExpandedPaths(ObservableCollection<FolderTreeItem> items, List<string> paths)
+        {
+            foreach (var item in items)
+            {
+                if (item.IsExpanded && !string.IsNullOrEmpty(item.Path))
+                    paths.Add(item.Path);
+                if (item.IsExpanded)
+                    CollectExpandedPaths(item.Children, paths);
+            }
+        }
+
+        /// <summary>
+        /// 保存された展開・選択状態を復元
+        /// </summary>
+        public void RestoreTreeState(TreeState? state)
+        {
+            if (state == null) return;
+
+            // 全ルートを一旦折りたたむ
+            foreach (var item in Items)
+                item.IsExpanded = false;
+
+            // 保存されたパスを親→子の順に展開（展開で子がLazy Loadされる）
+            foreach (var path in state.ExpandedPaths.OrderBy(p => p.Length))
+            {
+                var item = FindItemByPath(Items, path);
+                if (item != null)
+                    item.IsExpanded = true;
+            }
+
+            // 選択を復元
+            if (!string.IsNullOrEmpty(state.SelectedPath))
+                SelectFolder(state.SelectedPath);
         }
     }
 }

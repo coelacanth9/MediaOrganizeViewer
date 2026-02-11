@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace MediaOrganizeViewer.ViewModels
@@ -49,6 +50,9 @@ namespace MediaOrganizeViewer.ViewModels
             SourceFolderTree = new FolderTreeViewModel(_settingsService.SourceRootPaths, true, _settingsService);
             DestinationFolderTree = new FolderTreeViewModel(_settingsService.DestinationRootPaths, false, _settingsService);
 
+            // イベント購読前にツリー状態を復元（ファイル読み込みが走らないように）
+            RestoreTreeStates();
+
             // FolderTreeViewModelのSelectedPath変更を直接監視
             SourceFolderTree.PropertyChanged += async (s, e) =>
             {
@@ -73,6 +77,50 @@ namespace MediaOrganizeViewer.ViewModels
 
             // 最終閲覧位置を復元
             RestoreLastViewedFile();
+        }
+
+        private void RestoreTreeStates()
+        {
+            try
+            {
+                var sourceState = DeserializeTreeState(_settingsService.SourceTreeState);
+                SourceFolderTree.RestoreTreeState(sourceState);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Sourceツリー状態の復元エラー: {ex.Message}");
+            }
+
+            try
+            {
+                var destState = DeserializeTreeState(_settingsService.DestinationTreeState);
+                DestinationFolderTree.RestoreTreeState(destState);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Destinationツリー状態の復元エラー: {ex.Message}");
+            }
+        }
+
+        public void SaveTreeStates()
+        {
+            try
+            {
+                _settingsService.SourceTreeState = JsonSerializer.Serialize(SourceFolderTree.GetTreeState());
+                _settingsService.DestinationTreeState = JsonSerializer.Serialize(DestinationFolderTree.GetTreeState());
+                _settingsService.Save();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ツリー状態の保存エラー: {ex.Message}");
+            }
+        }
+
+        private static TreeState? DeserializeTreeState(string? json)
+        {
+            if (string.IsNullOrEmpty(json)) return null;
+            try { return JsonSerializer.Deserialize<TreeState>(json); }
+            catch { return null; }
         }
 
         private async void RestoreLastViewedFile()
@@ -247,7 +295,7 @@ namespace MediaOrganizeViewer.ViewModels
                    ext == ".jpg" || ext == ".jpeg" ||
                    ext == ".png" || ext == ".bmp" ||
                    ext == ".gif" || ext == ".webp" ||
-                   ext == ".mp4" ||
+                   ext == ".mp4" || ext == ".flv" ||
                    ext == ".mp3" || ext == ".wav" || ext == ".flac" ||
                    ext == ".pdf";
         }

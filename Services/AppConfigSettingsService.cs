@@ -24,6 +24,8 @@ namespace MediaOrganizeViewer
         // 「ショトカのやつ」であることが明確な名前に変更
         private List<FolderDestination> _shortcutFolders = new List<FolderDestination>();
         private int _skipIntervalSeconds = 10;
+        private string _sourceTreeState = string.Empty;
+        private string _destinationTreeState = string.Empty;
 
         public AppConfigSettingsService()
         {
@@ -63,12 +65,26 @@ namespace MediaOrganizeViewer
             set => SetProperty(ref _skipIntervalSeconds, value);
         }
 
+        public string SourceTreeState
+        {
+            get => _sourceTreeState;
+            set => SetProperty(ref _sourceTreeState, value);
+        }
+
+        public string DestinationTreeState
+        {
+            get => _destinationTreeState;
+            set => SetProperty(ref _destinationTreeState, value);
+        }
+
         public void Load()
         {
             SourceRootPaths = ParsePathList(Settings.Default.SourceRootPath);
             DestinationRootPaths = ParsePathList(Settings.Default.DestinationRootPath);
             LastViewedFilePath = Settings.Default.LastViewedFilePath;
             SkipIntervalSeconds = Settings.Default.SkipIntervalSeconds;
+            SourceTreeState = Settings.Default.SourceTreeState;
+            DestinationTreeState = Settings.Default.DestinationTreeState;
 
             // Settings.Default.FolderShortcuts (JSON) から _shortcutFolders への復元
             var json = Settings.Default.FolderShortcuts;
@@ -118,6 +134,8 @@ namespace MediaOrganizeViewer
             Settings.Default.DestinationRootPath = JsonSerializer.Serialize(DestinationRootPaths);
             Settings.Default.LastViewedFilePath = LastViewedFilePath;
             Settings.Default.SkipIntervalSeconds = SkipIntervalSeconds;
+            Settings.Default.SourceTreeState = SourceTreeState;
+            Settings.Default.DestinationTreeState = DestinationTreeState;
 
             // _shortcutFolders から Settings.Default.FolderShortcuts (JSON) への保存
             try

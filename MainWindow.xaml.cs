@@ -35,6 +35,14 @@ namespace MediaOrganizeViewer
                     }
                 };
             }
+
+            Closing += OnWindowClosing;
+        }
+
+        private void OnWindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            var vm = DataContext as MainViewModel;
+            vm?.SaveTreeStates();
         }
 
         private async void OnNextMediaRequested(object sender, RoutedEventArgs e)
