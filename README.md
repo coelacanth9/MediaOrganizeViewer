@@ -136,9 +136,6 @@ MediaFactory.Register(".mp4", path => new VideoContent(path));
   - BitmapSource.Freeze() によるスレッド間共有とメモリ最適化
   - 非同期ロード（LoadAsync）でUIスレッドをブロックしない設計
 
-### 今後の予定
-- （特になし）
-
 ### ライセンス
 
   本リポジトリのソースコードは [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) ライセンスの下で公開しています。
