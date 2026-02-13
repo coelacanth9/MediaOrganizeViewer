@@ -45,6 +45,11 @@ namespace MediaOrganizeViewer
         string DestinationTreeState { get; set; }
 
         /// <summary>
+        /// 動画・音声の自動再生
+        /// </summary>
+        bool AutoPlayMedia { get; set; }
+
+        /// <summary>
         /// 物理設定からデータを読み込む
         /// </summary>
         void Load();

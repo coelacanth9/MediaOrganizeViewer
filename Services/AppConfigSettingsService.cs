@@ -26,6 +26,7 @@ namespace MediaOrganizeViewer
         private int _skipIntervalSeconds = 10;
         private string _sourceTreeState = string.Empty;
         private string _destinationTreeState = string.Empty;
+        private bool _autoPlayMedia = true;
 
         public AppConfigSettingsService()
         {
@@ -77,6 +78,12 @@ namespace MediaOrganizeViewer
             set => SetProperty(ref _destinationTreeState, value);
         }
 
+        public bool AutoPlayMedia
+        {
+            get => _autoPlayMedia;
+            set => SetProperty(ref _autoPlayMedia, value);
+        }
+
         public void Load()
         {
             SourceRootPaths = ParsePathList(Settings.Default.SourceRootPath);
@@ -85,6 +92,7 @@ namespace MediaOrganizeViewer
             SkipIntervalSeconds = Settings.Default.SkipIntervalSeconds;
             SourceTreeState = Settings.Default.SourceTreeState;
             DestinationTreeState = Settings.Default.DestinationTreeState;
+            AutoPlayMedia = Settings.Default.AutoPlayMedia;
 
             // Settings.Default.FolderShortcuts (JSON) から _shortcutFolders への復元
             var json = Settings.Default.FolderShortcuts;
@@ -136,6 +144,7 @@ namespace MediaOrganizeViewer
             Settings.Default.SkipIntervalSeconds = SkipIntervalSeconds;
             Settings.Default.SourceTreeState = SourceTreeState;
             Settings.Default.DestinationTreeState = DestinationTreeState;
+            Settings.Default.AutoPlayMedia = AutoPlayMedia;
 
             // _shortcutFolders から Settings.Default.FolderShortcuts (JSON) への保存
             try

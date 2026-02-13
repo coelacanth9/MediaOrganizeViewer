@@ -158,9 +158,11 @@
                 </Style>
             </Border.Style>
             <Border.ContextMenu>
-                <ContextMenu>
+                <ContextMenu Opened="MediaContextMenu_Opened" Closed="MediaContextMenu_Closed">
                     <MenuItem x:Name="MenuSinglePage" Header="1ページ表示" Click="DisplayModeSingle_Click"/>
                     <MenuItem x:Name="MenuSpreadPage" Header="2ページ表示（見開き）" Click="DisplayModeSpread_Click"/>
+                    <Separator x:Name="MenuAutoPlaySeparator"/>
+                    <MenuItem x:Name="MenuAutoPlay" Header="自動再生" IsCheckable="True" Click="AutoPlay_Click"/>
                 </ContextMenu>
             </Border.ContextMenu>
             <Grid>

@@ -223,13 +223,17 @@ namespace MediaOrganizeViewer.ViewModels
                 CurrentMedia.Dispose();
             }
 
-            CurrentMedia = MediaFactory.Create(path);
+            var media = MediaFactory.Create(path);
 
-            // 保存した表示モードを適用
-            if (CurrentMedia is ArchiveContent newArchive)
+            // CurrentMedia セット前にプロパティを適用（セッターで View が即座に更新されるため）
+            if (media is VideoContent || media is AudioContent)
+                media.AutoPlay = _settingsService.AutoPlayMedia;
+            if (media is ArchiveContent newArchive)
                 newArchive.DisplayMode = _preferredDisplayMode;
-            else if (CurrentMedia is PdfContent newPdf)
+            else if (media is PdfContent newPdf)
                 newPdf.DisplayMode = _preferredDisplayMode;
+
+            CurrentMedia = media;
 
             CurrentMedia.PropertyChanged += OnCurrentMediaPropertyChanged;
             await CurrentMedia.LoadAsync();

@@ -106,5 +106,17 @@ namespace MediaOrganizeViewer.Properties {
                 this["DestinationTreeState"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool AutoPlayMedia {
+            get {
+                return ((bool)(this["AutoPlayMedia"]));
+            }
+            set {
+                this["AutoPlayMedia"] = value;
+            }
+        }
     }
 }

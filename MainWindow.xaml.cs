@@ -10,10 +10,13 @@ namespace MediaOrganizeViewer
 {
     public partial class MainWindow : Window
     {
+        private readonly ISettingsService _settingsService;
+
         public MainWindow()
         {
             InitializeComponent();
             var settingsService = new AppConfigSettingsService();
+            _settingsService = settingsService;
             this.DataContext = new MainViewModel(settingsService);
 
             AddHandler(MediaControlBar.NextMediaRequestedEvent, new RoutedEventHandler(OnNextMediaRequested));
@@ -37,6 +40,7 @@ namespace MediaOrganizeViewer
             }
 
             Closing += OnWindowClosing;
+
         }
 
         private void OnWindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -501,20 +505,52 @@ namespace MediaOrganizeViewer
         private void MediaArea_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             var vm = DataContext as MainViewModel;
+            bool hasItems = vm?.CurrentMedia is ArchiveContent or PdfContent or VideoContent or AudioContent;
+            if (!hasItems)
+                e.Handled = true;
+        }
+
+        private void MediaContextMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as MainViewModel;
+            bool isPageMedia = false;
+
             if (vm?.CurrentMedia is ArchiveContent archive)
             {
                 MenuSinglePage.IsChecked = archive.DisplayMode == ImageDisplayMode.Single;
                 MenuSpreadPage.IsChecked = archive.DisplayMode == ImageDisplayMode.Spread;
+                isPageMedia = true;
             }
             else if (vm?.CurrentMedia is PdfContent pdf)
             {
                 MenuSinglePage.IsChecked = pdf.DisplayMode == ImageDisplayMode.Single;
                 MenuSpreadPage.IsChecked = pdf.DisplayMode == ImageDisplayMode.Spread;
+                isPageMedia = true;
             }
-            else
-            {
-                e.Handled = true; // Archive/PDF以外ではメニューを表示しない
-            }
+
+            bool isPlayableMedia = vm?.CurrentMedia is VideoContent or AudioContent;
+
+            // ページモード項目の表示/非表示
+            MenuSinglePage.Visibility = isPageMedia ? Visibility.Visible : Visibility.Collapsed;
+            MenuSpreadPage.Visibility = isPageMedia ? Visibility.Visible : Visibility.Collapsed;
+
+            // セパレータ: ページモードと自動再生の両方が表示される場合のみ
+            MenuAutoPlaySeparator.Visibility = isPageMedia && isPlayableMedia ? Visibility.Visible : Visibility.Collapsed;
+
+            // 自動再生: 動画/音声のときだけ表示
+            MenuAutoPlay.Visibility = isPlayableMedia ? Visibility.Visible : Visibility.Collapsed;
+            MenuAutoPlay.IsChecked = _settingsService.AutoPlayMedia;
+        }
+
+        private void AutoPlay_Click(object sender, RoutedEventArgs e)
+        {
+            _settingsService.AutoPlayMedia = MenuAutoPlay.IsChecked;
+            _settingsService.Save();
+        }
+
+        private void MediaContextMenu_Closed(object sender, RoutedEventArgs e)
+        {
+            this.Focus();
         }
 
         private void DisplayModeSingle_Click(object sender, RoutedEventArgs e)
