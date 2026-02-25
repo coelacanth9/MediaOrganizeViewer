@@ -23,8 +23,9 @@ namespace MediaOrganizeViewer
             AddHandler(MediaControlBar.PrevMediaRequestedEvent, new RoutedEventHandler(OnPrevMediaRequested));
             AddHandler(MediaControlBar.SkipIntervalChangedEvent, new RoutedEventHandler(OnSkipIntervalChanged));
 
-            // 保存されたスキップ間隔を復元
+            // 保存されたスキップ間隔・音量を復元
             MediaControlBar.DefaultSkipSeconds = settingsService.SkipIntervalSeconds;
+            MediaControlBar.DefaultVolume = settingsService.MediaVolume;
 
             // ファイルリスト選択変更時にスクロール追従
             var vm = DataContext as MainViewModel;
@@ -47,6 +48,10 @@ namespace MediaOrganizeViewer
         {
             var vm = DataContext as MainViewModel;
             vm?.SaveTreeStates();
+
+            // 音量を保存
+            _settingsService.MediaVolume = MediaControlBar.DefaultVolume;
+            _settingsService.Save();
         }
 
         private async void OnNextMediaRequested(object sender, RoutedEventArgs e)
@@ -188,8 +193,8 @@ namespace MediaOrganizeViewer
                 return;
             }
 
-            // Space: 移動先ツリーで選択中のフォルダへファイル移動
-            if (e.Key == Key.Space)
+            // Enter: 移動先ツリーで選択中のフォルダへファイル移動
+            if (e.Key == Key.Enter)
             {
                 e.Handled = true;
                 var selected = FindSelectedItem(vm.DestinationFolderTree.Items);
@@ -203,6 +208,17 @@ namespace MediaOrganizeViewer
                 return;
             }
 
+            // 選択中のアイテムのチェックボックスのOn/Off
+            if (e.Key == Key.Space)
+            {
+                e.Handled = true;
+                if (vm.SelectedFileItem != null)
+                {
+                    vm.SelectedFileItem.IsChecked = !vm.SelectedFileItem.IsChecked;
+                }
+                this.Focus();
+                return;
+            }
             // Left/Right: 書庫/PDFはページ送り、動画/音声はスキップ
             if (e.Key == Key.Left || e.Key == Key.Right)
             {
@@ -493,6 +509,20 @@ namespace MediaOrganizeViewer
             {
                 vm.StatusText = text;
             }
+        }
+
+        private void RefreshDestTree_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as MainViewModel;
+            vm?.DestinationFolderTree.RefreshAll();
+            this.Focus();
+        }
+
+        private void RefreshSourceTree_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as MainViewModel;
+            vm?.SourceFolderTree.RefreshAll();
+            this.Focus();
         }
 
         private void FileListBox_PreviewMouseUp(object sender, MouseButtonEventArgs e)

@@ -50,6 +50,11 @@ namespace MediaOrganizeViewer
         bool AutoPlayMedia { get; set; }
 
         /// <summary>
+        /// 動画・音声の音量（0-100）
+        /// </summary>
+        int MediaVolume { get; set; }
+
+        /// <summary>
         /// 物理設定からデータを読み込む
         /// </summary>
         void Load();

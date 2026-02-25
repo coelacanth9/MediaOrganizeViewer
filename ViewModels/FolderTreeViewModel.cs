@@ -407,6 +407,17 @@ namespace MediaOrganizeViewer.ViewModels
         }
 
         /// <summary>
+        /// 全ルートを再読み込み（展開・選択状態を保持）
+        /// </summary>
+        public void RefreshAll()
+        {
+            var state = GetTreeState();
+            var rootPaths = GetRootPaths();
+            SetRoots(rootPaths);
+            RestoreTreeState(state);
+        }
+
+        /// <summary>
         /// 保存された展開・選択状態を復元
         /// </summary>
         public void RestoreTreeState(TreeState? state)

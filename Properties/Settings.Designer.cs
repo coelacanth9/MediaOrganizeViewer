@@ -118,5 +118,17 @@ namespace MediaOrganizeViewer.Properties {
                 this["AutoPlayMedia"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
+        public int MediaVolume {
+            get {
+                return ((int)(this["MediaVolume"]));
+            }
+            set {
+                this["MediaVolume"] = value;
+            }
+        }
     }
 }
